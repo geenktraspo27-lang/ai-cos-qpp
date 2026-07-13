@@ -83,6 +83,13 @@ export interface Workflow {
   current: number;
 }
 
+export interface DiscussionMessage {
+  by: EmployeeId;
+  text: string;
+  /** Marks a dissenting/revising message, rendered distinctly from agreement. */
+  stance?: 'dissent' | 'revision';
+}
+
 export interface Decision {
   id: number;
   title: string;
@@ -90,6 +97,10 @@ export interface Decision {
   risk: '低' | '中' | '高';
   by: EmployeeId;
   detail: string;
+  /** README §8: discussion log showing how employees debated to a conclusion. */
+  discussion: DiscussionMessage[];
+  /** Employees credited at the end of the thread as co-authors of the recommendation. */
+  contributors: EmployeeId[];
 }
 
 export interface Idea {

@@ -1,0 +1,132 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(6, 13, 24, 0.45);
+}
+
+.frame {
+  width: 110px;
+  height: 158px;
+  margin: 0 auto;
+  border-radius: var(--aicos-radius-card);
+  overflow: hidden;
+  border-width: 2px;
+  border-style: solid;
+  background: var(--aicos-cream-dim);
+}
+
+.frameImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.name {
+  font-family: var(--aicos-font-jp);
+  font-size: 17px;
+  font-weight: 800;
+  margin-top: 10px;
+}
+
+.nameJp {
+  font-size: 11px;
+  color: var(--aicos-dim);
+  font-weight: 500;
+}
+
+.role {
+  font-family: var(--aicos-font-jp);
+  font-size: 11.5px;
+  color: var(--aicos-brown);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.roleJp {
+  color: var(--aicos-dim);
+  font-weight: 400;
+}
+
+.persona {
+  font-size: 11px;
+  color: var(--aicos-brown-soft);
+  line-height: 1.6;
+  margin: 9px 0 12px;
+  min-height: 52px;
+}
+
+.perfRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.perfLabel {
+  font-size: 10px;
+  color: var(--aicos-dim);
+}
+
+.perfValue {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--aicos-holo);
+}
+
+.barTrack {
+  height: 6px;
+  background: rgba(184, 147, 78, 0.16);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.footRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 11px;
+  font-size: 10.5px;
+}
+
+.doneText {
+  color: var(--aicos-dim);
+}
+
+.workingBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--aicos-green);
+  font-weight: 700;
+}
+
+.workingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--aicos-green);
+  animation: aicos-pulse 2s infinite;
+}

@@ -8,16 +8,40 @@ import { Toast } from './components/Toast';
 import { Face } from './components/Face';
 import { Lobby } from './rooms/Lobby';
 import { Mission } from './rooms/Mission';
-import { ComingSoon } from './rooms/ComingSoon';
+import { Decision } from './rooms/Decision';
+import { Finance } from './rooms/Finance';
+import { Brain } from './rooms/Brain';
+import { Marketing } from './rooms/Marketing';
+import { Workflow } from './rooms/Workflow';
+import { Documentation } from './rooms/Documentation';
+import { EmployeeRoom } from './rooms/EmployeeRoom';
 import { employeeById } from './data/employees';
-import type { RoomId } from './types';
 import styles from './App.module.css';
 
 function RoomOutlet() {
   const { current } = useApp();
-  if (current === 'lobby') return <Lobby />;
-  if (current === 'mission') return <Mission />;
-  return <ComingSoon roomId={current as Exclude<RoomId, 'lobby' | 'mission'>} />;
+  switch (current) {
+    case 'lobby':
+      return <Lobby />;
+    case 'mission':
+      return <Mission />;
+    case 'decision':
+      return <Decision />;
+    case 'finance':
+      return <Finance />;
+    case 'brain':
+      return <Brain />;
+    case 'marketing':
+      return <Marketing />;
+    case 'workflow':
+      return <Workflow />;
+    case 'docs':
+      return <Documentation />;
+    case 'employee':
+      return <EmployeeRoom />;
+    default:
+      return null;
+  }
 }
 
 function Shell() {

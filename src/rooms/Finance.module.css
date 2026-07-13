@@ -1,0 +1,157 @@
+.topGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .topGrid,
+  .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  padding: 18px;
+}
+
+.cardLabelHolo {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--aicos-holo);
+  text-transform: uppercase;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.kpiCard {
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-card);
+  padding: 11px;
+  background: var(--aicos-card);
+}
+
+.kpiLabel {
+  font-size: 10px;
+  color: var(--aicos-dim);
+}
+
+.kpiValue {
+  font-family: var(--aicos-font-en);
+  font-size: 17px;
+  color: var(--aicos-brown);
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.costList {
+  display: grid;
+  gap: 13px;
+  margin-top: 14px;
+}
+
+.costRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.costName {
+  font-size: 12px;
+  color: var(--aicos-brown);
+}
+
+.costPct {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--aicos-holo);
+}
+
+.barTrack {
+  height: 6px;
+  background: rgba(184, 147, 78, 0.16);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.contractList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.contractCard {
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-card);
+  padding: 12px;
+  background: var(--aicos-card);
+}
+
+.contractHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.contractName {
+  font-family: var(--aicos-font-jp);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--aicos-brown);
+}
+
+.contractDue {
+  font-size: 10px;
+  font-weight: 700;
+  color: #c7823b;
+  border: 1px solid #e5c9a3;
+  padding: 2px 9px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.contractNote {
+  font-size: 11px;
+  color: var(--aicos-brown-soft);
+  margin-top: 5px;
+}
+
+.suggestionRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  align-items: flex-start;
+}
+
+.suggestionText {
+  font-size: 12px;
+  color: var(--aicos-brown-soft);
+  line-height: 1.75;
+  margin: 0;
+}

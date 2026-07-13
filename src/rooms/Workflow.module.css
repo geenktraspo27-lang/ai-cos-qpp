@@ -1,0 +1,83 @@
+.list {
+  display: grid;
+  gap: 14px;
+}
+
+.card {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  padding: 18px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.headInfo {
+  flex: 1;
+  min-width: 180px;
+}
+
+.name {
+  font-family: var(--aicos-font-jp);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--aicos-brown);
+}
+
+.owner {
+  font-size: 10.5px;
+  color: var(--aicos-dim);
+}
+
+.pct {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--aicos-holo);
+}
+
+.steps {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 6px;
+}
+
+.stepWrap {
+  display: contents;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.stepLabel {
+  font-size: 10px;
+  text-align: center;
+}
+
+.connector {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  margin-top: 6px;
+}

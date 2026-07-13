@@ -1,0 +1,155 @@
+.searchBar {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  padding: 18px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.searchCol {
+  flex: 1;
+  min-width: 240px;
+}
+
+.searchInput {
+  width: 100%;
+  background: var(--aicos-card);
+  border: 1px solid var(--aicos-line);
+  border-radius: 24px;
+  padding: 11px 16px;
+  color: var(--aicos-brown);
+  font-size: 12.5px;
+  outline: none;
+  font-family: var(--aicos-font-jp);
+  margin-bottom: 11px;
+}
+
+.catRow {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.catChip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 13px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: var(--aicos-font-jp);
+  border: 1px solid var(--aicos-line);
+  background: var(--aicos-card);
+  color: var(--aicos-dim);
+}
+
+.catChip[data-active='true'] {
+  border-color: var(--aicos-gold);
+  background: rgba(184, 147, 78, 0.16);
+  color: var(--aicos-gold);
+}
+
+.countCol {
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.countNum {
+  font-family: var(--aicos-font-en);
+  font-size: 26px;
+  font-weight: 700;
+  color: #8a6238;
+}
+
+.countLabel {
+  font-size: 10px;
+  color: var(--aicos-dim);
+  letter-spacing: 0.1em;
+}
+
+.empty {
+  text-align: center;
+  padding: 44px;
+  color: var(--aicos-dim);
+  font-size: 13px;
+  background: rgba(250, 245, 235, 0.7);
+  border: 1px dashed var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.card:hover {
+  border-color: var(--aicos-gold);
+  transform: translateY(-2px);
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 9px;
+}
+
+.catPill {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8a6238;
+  border: 1px solid #e5c9a3;
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: var(--aicos-cream-dim);
+}
+
+.date {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  color: var(--aicos-dim);
+}
+
+.docTitle {
+  font-family: var(--aicos-font-jp);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--aicos-brown);
+  line-height: 1.5;
+  margin-bottom: 7px;
+}
+
+.summary {
+  font-size: 11.5px;
+  color: var(--aicos-brown-soft);
+  line-height: 1.65;
+  margin: 0 0 11px;
+}
+
+.byRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-top: 1px dashed var(--aicos-line);
+  padding-top: 9px;
+}
+
+.byText {
+  font-size: 10.5px;
+  color: var(--aicos-dim);
+}

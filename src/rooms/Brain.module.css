@@ -1,0 +1,69 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  padding: 16px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--aicos-gold);
+  border: 1px solid var(--aicos-line);
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--aicos-cream-dim);
+}
+
+.heat {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--aicos-holo);
+}
+
+.title {
+  font-family: var(--aicos-font-jp);
+  font-size: 13.5px;
+  color: var(--aicos-brown);
+  font-weight: 700;
+  margin: 12px 0 10px;
+  line-height: 1.55;
+}
+
+.barTrack {
+  height: 6px;
+  background: rgba(184, 147, 78, 0.16);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.byRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.byText {
+  font-size: 11px;
+  color: var(--aicos-dim);
+}
