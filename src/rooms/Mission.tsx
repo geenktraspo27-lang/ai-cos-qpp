@@ -3,6 +3,7 @@ import { RoomShell } from '../components/RoomShell';
 import { Ring } from '../components/Ring';
 import { Face } from '../components/Face';
 import { useApp } from '../state/AppContext';
+import { useAuth } from '../state/AuthContext';
 import { useCompanyData } from '../state/CompanyDataContext';
 import { EMPLOYEES, employeeById } from '../data/employees';
 import type { EmployeeId } from '../types';
@@ -11,6 +12,7 @@ import styles from './Mission.module.css';
 /** Mission Room (経営戦略室) — Vision, Strategic Goals, KPI/KDI, all founder-editable. README §7.2/§10. */
 export function Mission() {
   const { showToast } = useApp();
+  const { profile } = useAuth();
   const {
     vision, visionProgressPct, goals, kpis,
     updateVision, addGoal, updateGoal, removeGoal, addKpi, updateKpi, removeKpi,
@@ -49,7 +51,7 @@ export function Mission() {
               className={styles.visionInput}
             />
           )}
-          <div className={styles.visionMeta}>MIRAI WORKS Inc. — FY2026 Strategic Mission</div>
+          <div className={styles.visionMeta}>{profile?.companyName} — FY2026 Strategic Mission</div>
           <div className={styles.visionRing}>
             <Ring pct={visionProgressPct} size={132} color="#2E7CD6" sub="MISSION PROGRESS" />
           </div>

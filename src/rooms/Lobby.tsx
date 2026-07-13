@@ -1,4 +1,5 @@
 import { useApp } from '../state/AppContext';
+import { useAuth } from '../state/AuthContext';
 import { useCompanyData } from '../state/CompanyDataContext';
 import { EMPLOYEES, employeeById } from '../data/employees';
 import { ALL_ROOMS, ROOM_HOSTS } from '../data/rooms';
@@ -18,6 +19,7 @@ const relativeTime = (iso: string): string => {
 /** Atrium lobby (design pack's adopted variant A) — README §7.1. */
 export function Lobby() {
   const { go } = useApp();
+  const { profile } = useAuth();
   const { visionProgressPct, activeWorkflowsCount, pendingDecisionsCount, employeeStates, feed } = useCompanyData();
 
   const vitals = [
@@ -36,7 +38,7 @@ export function Lobby() {
             <div className={styles.heroScrim} />
             <div className={styles.heroContent}>
               <span className={styles.heroEyebrow}>Welcome back, Founder</span>
-              <h1 className={styles.heroTitle}>おかえりなさい、げんきさん</h1>
+              <h1 className={styles.heroTitle}>おかえりなさい、{profile?.displayName}さん</h1>
               <p className={styles.heroSub}>
                 AI-COS本社は今日も稼働中。AI社員 8名が各フロアで働いています。
               </p>
