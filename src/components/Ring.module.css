@@ -1,0 +1,38 @@
+.box {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.svg {
+  transform: rotate(-90deg);
+  display: block;
+}
+
+.progress {
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.label {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  color: var(--aicos-brown);
+  line-height: 1;
+}
+
+.sub {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--aicos-dim);
+  text-align: center;
+}

@@ -1,0 +1,309 @@
+.lobby {
+  animation: aicos-fade-up 0.5s ease;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card,
+.heroCard,
+.healthCard,
+.employeesCard,
+.floorGuideCard,
+.feedCard {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+}
+
+.heroCard {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  min-height: 262px;
+}
+
+.heroImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 13, 24, 0.1) 28%, rgba(6, 13, 24, 0.86) 100%);
+}
+
+.heroContent {
+  position: relative;
+  padding: 168px 26px 22px;
+}
+
+.heroEyebrow {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--aicos-gold-bright);
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  font-family: var(--aicos-font-jp);
+  font-size: 25px;
+  font-weight: 800;
+  color: #fff7e8;
+  margin: 8px 0 5px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+}
+
+.heroSub {
+  color: rgba(255, 247, 232, 0.86);
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.healthCard {
+  padding: 18px;
+  display: flex;
+  gap: 22px;
+  align-items: center;
+}
+
+.vitals {
+  display: grid;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vitalRow {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--aicos-line);
+  padding-bottom: 7px;
+}
+
+.vitalKey {
+  color: var(--aicos-brown-soft);
+  font-size: 12px;
+}
+
+.vitalVal {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  color: var(--aicos-holo);
+  font-size: 13px;
+}
+
+.employeesCard {
+  padding: 18px;
+}
+
+.cardLabel {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--aicos-gold);
+  text-transform: uppercase;
+}
+
+.cardLabelHolo {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--aicos-holo);
+  text-transform: uppercase;
+}
+
+.employeesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 18px;
+  margin-top: 14px;
+}
+
+.employeeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.employeeInfo {
+  min-width: 0;
+}
+
+.employeeName {
+  font-family: var(--aicos-font-jp);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.employeeRole {
+  color: var(--aicos-dim);
+  font-weight: 500;
+  font-size: 10px;
+}
+
+.employeeActivity {
+  color: var(--aicos-brown-soft);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floorGuideCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.floorGuideHeader {
+  padding: 14px 18px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.floorGuideHint {
+  font-size: 10px;
+  color: var(--aicos-dim);
+}
+
+.crossWrap {
+  position: relative;
+  margin: 0 14px;
+  border-radius: var(--aicos-radius-card);
+  overflow: hidden;
+}
+
+.crossImg {
+  width: 100%;
+  display: block;
+}
+
+.crossScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 52%, rgba(6, 13, 24, 0.6));
+}
+
+.crossLabel {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  color: #cfe4ff;
+  font-family: var(--aicos-font-en);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.crossPulse {
+  display: inline-block;
+  animation: aicos-pulse 2s infinite;
+}
+
+.floorList {
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.floorBtn {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--aicos-line);
+  background: var(--aicos-card);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.floorBtn:hover {
+  border-color: var(--aicos-gold);
+  transform: translateX(3px);
+}
+
+.floorBtnLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.floorBtnJp {
+  font-family: var(--aicos-font-jp);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--aicos-brown);
+}
+
+.floorBtnFloor {
+  color: var(--aicos-dim);
+  font-size: 9px;
+  margin-left: 8px;
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.floorBtnArrow {
+  color: var(--aicos-holo);
+  font-size: 14px;
+}
+
+.feedCard {
+  padding: 18px;
+  flex: 1;
+}
+
+.feedList {
+  margin-top: 13px;
+  display: grid;
+  gap: 12px;
+}
+
+.feedRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.feedText {
+  flex: 1;
+  font-size: 12px;
+  color: var(--aicos-brown-soft);
+  line-height: 1.5;
+}
+
+.feedTime {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  color: var(--aicos-dim);
+  padding-top: 2px;
+}

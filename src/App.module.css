@@ -1,0 +1,94 @@
+.root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--aicos-night);
+  overflow: hidden;
+  position: relative;
+}
+
+.bgLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bgGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    var(--aicos-night-gradient-top) 0%,
+    var(--aicos-night-gradient-bottom) 62%
+  );
+}
+
+.bgGlowBottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 46%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(217, 179, 108, 0.16), transparent 66%);
+}
+
+.bgGlowTop {
+  position: absolute;
+  top: 6%;
+  left: 44%;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(77, 163, 255, 0.09), transparent 70%);
+}
+
+.body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  padding: 26px 28px;
+}
+
+.main[data-mobile='true'] {
+  padding: 16px 14px 90px;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.55);
+  animation: aicos-fade-in 0.2s ease;
+}
+
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: 18px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px 8px 8px;
+  border-radius: 30px;
+  border: 2px solid var(--aicos-gold-bright);
+  background: rgba(10, 23, 40, 0.95);
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
+}
+
+.fabName {
+  font-family: var(--aicos-font-jp);
+  font-weight: 800;
+  font-size: 12px;
+  color: #f3e4c8;
+}

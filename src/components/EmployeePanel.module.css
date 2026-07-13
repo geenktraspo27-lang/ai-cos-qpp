@@ -1,0 +1,329 @@
+.panel {
+  width: var(--aicos-employee-panel-width);
+  flex-shrink: 0;
+  border-left: 1px solid rgba(217, 179, 108, 0.25);
+  background: rgba(10, 23, 40, 0.96);
+  backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  gap: 13px;
+  overflow-y: auto;
+}
+
+.panel.drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 41;
+  width: min(320px, 92vw);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+  animation: aicos-slide-left 0.25s ease;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.heading {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--aicos-gold-bright);
+  text-transform: uppercase;
+}
+
+.closeBtn {
+  background: rgba(248, 242, 230, 0.08);
+  border: 1px solid rgba(217, 179, 108, 0.3);
+  border-radius: 10px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  color: var(--aicos-gold-bright);
+  font-size: 14px;
+}
+
+.selectors {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.selectorBtn {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.card {
+  background: var(--aicos-paper);
+  border-radius: var(--aicos-radius-panel);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--aicos-shadow-panel);
+}
+
+.portraitFrame {
+  width: 116px;
+  height: 168px;
+  margin: 0 auto;
+  border-radius: 14px;
+  overflow: hidden;
+  border-width: 2px;
+  border-style: solid;
+  background: var(--aicos-cream-dim);
+}
+
+.portraitImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.name {
+  font-family: var(--aicos-font-jp);
+  font-size: 19px;
+  font-weight: 800;
+  margin-top: 9px;
+}
+
+.nameJp {
+  font-size: 11px;
+  color: var(--aicos-dim);
+  font-weight: 500;
+}
+
+.role {
+  font-family: var(--aicos-font-jp);
+  font-size: 11px;
+  color: var(--aicos-brown);
+  font-weight: 700;
+}
+
+.roleJp {
+  color: var(--aicos-dim);
+  font-weight: 400;
+}
+
+.workingBadge {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--aicos-green);
+  border: 1px solid var(--aicos-green);
+  padding: 3px 11px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.workingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--aicos-green);
+  animation: aicos-pulse 2s infinite;
+}
+
+.activity {
+  font-size: 10.5px;
+  color: var(--aicos-brown-soft);
+  margin-top: 9px;
+  line-height: 1.5;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardLabel {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--aicos-holo);
+  text-transform: uppercase;
+}
+
+.editBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: var(--aicos-font-jp);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 4px 12px;
+  transition: all 0.18s;
+  border: 1px solid var(--aicos-line);
+  background: var(--aicos-card);
+  color: var(--aicos-dim);
+}
+
+.editBtn[data-on='true'] {
+  border-color: var(--aicos-holo);
+  background: rgba(46, 124, 214, 0.12);
+  color: var(--aicos-holo);
+}
+
+.taskRow {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--aicos-brown-soft);
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--aicos-line);
+  line-height: 1.4;
+}
+
+.taskDot {
+  flex-shrink: 0;
+}
+
+.taskEditList {
+  margin-top: 8px;
+  display: grid;
+  gap: 3px;
+}
+
+.taskEditRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.taskInput {
+  background: var(--aicos-card);
+  border: 1px solid var(--aicos-line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 11px;
+  color: var(--aicos-brown);
+  outline: none;
+  font-family: var(--aicos-font-jp);
+  flex: 1;
+  min-width: 0;
+}
+
+.taskDel {
+  background: rgba(199, 91, 91, 0.1);
+  border: 1px solid rgba(199, 91, 91, 0.4);
+  color: var(--aicos-danger);
+  border-radius: 7px;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  cursor: pointer;
+  font-size: 13px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(46, 124, 214, 0.08);
+  border: 1px dashed var(--aicos-holo);
+  color: var(--aicos-holo);
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--aicos-font-jp);
+  margin-top: 4px;
+}
+
+.recCard {
+  background: var(--aicos-paper);
+  border-radius: var(--aicos-radius-panel);
+  padding: 14px 16px;
+  box-shadow: var(--aicos-shadow-panel);
+}
+
+.recText {
+  font-size: 11.5px;
+  color: var(--aicos-brown-soft);
+  line-height: 1.75;
+  margin-top: 9px;
+}
+
+.chatArea {
+  margin-top: auto;
+}
+
+.chatLog {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.bubbleMe {
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 8px 11px;
+  border-radius: 12px 12px 3px 12px;
+  background: rgba(217, 179, 108, 0.2);
+  color: #5a4324;
+  justify-self: end;
+}
+
+.bubbleAi {
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 8px 11px;
+  border-radius: 12px 12px 12px 3px;
+  background: var(--aicos-card);
+  color: var(--aicos-brown-soft);
+  border: 1px solid var(--aicos-line);
+  justify-self: start;
+}
+
+.chatInputRow {
+  display: flex;
+  gap: 7px;
+}
+
+.chatInput {
+  flex: 1;
+  min-width: 0;
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: 22px;
+  padding: 10px 14px;
+  color: var(--aicos-brown);
+  font-size: 12px;
+  outline: none;
+  font-family: var(--aicos-font-jp);
+}
+
+.sendBtn {
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  cursor: pointer;
+  font-size: 15px;
+  flex-shrink: 0;
+}

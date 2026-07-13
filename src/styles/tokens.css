@@ -1,0 +1,220 @@
+/* AI-COS design tokens — ported from design pack README §6 (geenktraspo27-lang/ai-cos-v1) */
+:root {
+  /* color */
+  --aicos-night: #0a1728;
+  --aicos-night-deep: #060d18;
+  --aicos-night-gradient-top: #0c1e38;
+  --aicos-night-gradient-bottom: #060d18;
+  --aicos-paper: rgba(250, 245, 235, 0.97);
+  --aicos-cream: #f8f2e6;
+  --aicos-cream-dim: #f1e8d6;
+  --aicos-card: #fffdf8;
+  --aicos-line: #e3d6be;
+  --aicos-brown: #4a3421;
+  --aicos-brown-soft: #6b5138;
+  --aicos-dim: #95836a;
+  --aicos-gold: #b8934e;
+  --aicos-gold-bright: #d9b36c;
+  --aicos-holo: #2e7cd6;
+  --aicos-holo-glow: #4da3ff;
+  --aicos-green: #3fa45b;
+  --aicos-danger: #c75b5b;
+  --aicos-notif: #e56a9a;
+
+  /* typography */
+  --aicos-font-jp: 'M PLUS Rounded 1c', sans-serif;
+  --aicos-font-en: 'Quicksand', sans-serif;
+
+  /* shape */
+  --aicos-radius-panel: 16px;
+  --aicos-radius-card: 12px;
+  --aicos-radius-pill: 20px;
+  --aicos-shadow-panel: 0 8px 28px rgba(6, 13, 24, 0.35);
+  --aicos-gap: 16px;
+  --aicos-gap-lg: 18px;
+
+  /* layout */
+  --aicos-floor-nav-width: 214px;
+  --aicos-employee-panel-width: 292px;
+  --aicos-header-height: 48px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--aicos-night-deep);
+}
+
+#root {
+  height: 100vh;
+}
+
+body {
+  font-family: var(--aicos-font-jp), var(--aicos-font-en), sans-serif;
+}
+
+a {
+  color: var(--aicos-holo);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--aicos-holo-glow);
+}
+
+button {
+  font-family: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--aicos-holo-glow);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(217, 179, 108, 0.32);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes aicos-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes aicos-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aicos-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes aicos-slide-right {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes aicos-slide-left {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes aicos-core-flash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  35% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.9);
+  }
+}
+
+@keyframes aicos-sweep {
+  0% {
+    transform: translateX(-130%) skewX(-14deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(130%) skewX(-14deg);
+    opacity: 0;
+  }
+}
+
+@keyframes aicos-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aicos-stamp-pop {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-8deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.9) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+@keyframes aicos-float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes aicos-core-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

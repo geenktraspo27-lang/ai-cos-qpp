@@ -1,0 +1,31 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.ring {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 2px solid rgba(77, 163, 255, 0.7);
+  transform: translate(-50%, -50%);
+  animation: aicos-core-flash 0.6s ease-out forwards;
+}
+
+.sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(217, 179, 108, 0.28) 50%,
+    transparent 60%
+  );
+  animation: aicos-sweep 0.6s ease-out forwards;
+}

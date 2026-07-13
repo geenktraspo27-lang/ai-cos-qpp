@@ -1,0 +1,234 @@
+.header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 22px;
+  border-bottom: 1px solid rgba(217, 179, 108, 0.28);
+  background: rgba(6, 13, 24, 0.86);
+  backdrop-filter: blur(14px);
+}
+
+.iconBtn {
+  position: relative;
+  background: rgba(248, 242, 230, 0.06);
+  border: 1px solid rgba(217, 179, 108, 0.3);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  color: var(--aicos-gold-bright);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.core {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--aicos-gold-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, rgba(77, 163, 255, 0.5), rgba(46, 124, 214, 0.15));
+  box-shadow: 0 0 15px rgba(77, 163, 255, 0.45);
+}
+
+.coreDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--aicos-holo-glow);
+  box-shadow: 0 0 9px var(--aicos-holo-glow);
+  animation: aicos-pulse 3s infinite;
+}
+
+.logo {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  color: #f3e4c8;
+}
+
+.logoSub {
+  font-size: 7.5px;
+  color: var(--aicos-gold-bright);
+  letter-spacing: 0.24em;
+}
+
+.divider {
+  width: 1px;
+  height: 26px;
+  background: rgba(217, 179, 108, 0.3);
+}
+
+.companyName {
+  font-size: 12.5px;
+  color: #b9a98c;
+  font-weight: 700;
+}
+
+.right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.coreStatus {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 10px;
+  color: #6fd695;
+  letter-spacing: 0.14em;
+}
+
+.coreStatusDot {
+  display: inline-block;
+  animation: aicos-pulse 2s infinite;
+}
+
+.clock {
+  font-family: var(--aicos-font-en);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: #b9a98c;
+}
+
+.notifWrap {
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--aicos-notif);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  width: 300px;
+  background: rgba(250, 245, 235, 0.99);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: 0 16px 44px rgba(6, 13, 24, 0.55);
+  z-index: 20;
+  overflow: hidden;
+  animation: aicos-fade-up 0.2s ease;
+}
+
+.dropdownHeader {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--aicos-line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--aicos-gold);
+}
+
+.dropdownCount {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--aicos-dim);
+}
+
+.notifRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--aicos-line);
+  cursor: pointer;
+  width: 100%;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.notifBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.notifText {
+  font-size: 11.5px;
+  color: var(--aicos-brown);
+  line-height: 1.5;
+}
+
+.notifMeta {
+  font-family: var(--aicos-font-en);
+  font-size: 9.5px;
+  color: var(--aicos-dim);
+  margin-top: 2px;
+}
+
+.unreadDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--aicos-notif);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--aicos-gold-bright);
+  background: linear-gradient(135deg, var(--aicos-gold-bright), var(--aicos-gold));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: #3a2a16;
+}
+
+.userName {
+  font-size: 11.5px;
+  color: #f3e4c8;
+  font-weight: 700;
+}
+
+.userRole {
+  font-size: 8px;
+  color: var(--aicos-gold-bright);
+  letter-spacing: 0.18em;
+}

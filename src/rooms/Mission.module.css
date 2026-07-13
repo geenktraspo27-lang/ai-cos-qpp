@@ -1,0 +1,349 @@
+.visionCard {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  text-align: center;
+  padding: 28px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.visionBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.14;
+}
+
+.visionContent {
+  position: relative;
+}
+
+.visionHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cardLabel {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--aicos-gold);
+  text-transform: uppercase;
+}
+
+.cardLabelHolo {
+  font-family: var(--aicos-font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--aicos-holo);
+  text-transform: uppercase;
+}
+
+.editBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: var(--aicos-font-jp);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 4px 12px;
+  transition: all 0.18s;
+  border: 1px solid var(--aicos-line);
+  background: var(--aicos-card);
+  color: var(--aicos-dim);
+}
+
+.editBtn[data-on='true'] {
+  border-color: var(--aicos-holo);
+  background: rgba(46, 124, 214, 0.12);
+  color: var(--aicos-holo);
+}
+
+.visionText {
+  font-family: var(--aicos-font-jp);
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--aicos-brown);
+  margin: 12px auto 6px;
+  max-width: 620px;
+  line-height: 1.7;
+}
+
+.visionInput {
+  width: 100%;
+  max-width: 620px;
+  margin: 12px auto 6px;
+  display: block;
+  background: var(--aicos-card);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-card);
+  padding: 12px 14px;
+  font-family: var(--aicos-font-jp);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--aicos-brown);
+  line-height: 1.6;
+  text-align: center;
+  outline: none;
+  resize: vertical;
+  min-height: 70px;
+}
+
+.visionMeta {
+  color: var(--aicos-dim);
+  font-size: 11px;
+}
+
+.visionRing {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .twoCol {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  padding: 18px;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.goalsList {
+  display: grid;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.goalRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.goalName {
+  font-size: 13px;
+  color: var(--aicos-brown);
+  font-weight: 500;
+}
+
+.goalPct {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--aicos-holo);
+}
+
+.goalBarTrack {
+  height: 6px;
+  background: rgba(184, 147, 78, 0.16);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.goalBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+
+.goalOwnerRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.goalOwnerText {
+  font-size: 10px;
+  color: var(--aicos-dim);
+}
+
+.goalEditCard {
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-card);
+  padding: 12px;
+  background: var(--aicos-card);
+  display: grid;
+  gap: 8px;
+}
+
+.goalEditRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.input {
+  background: var(--aicos-card);
+  border: 1px solid var(--aicos-line);
+  border-radius: 9px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--aicos-brown);
+  outline: none;
+  font-family: var(--aicos-font-jp);
+  width: 100%;
+}
+
+.smallInput {
+  composes: input;
+  font-size: 11px;
+  padding: 6px 9px;
+}
+
+.pctInput {
+  composes: input;
+  font-size: 11px;
+  padding: 6px 9px;
+  width: 72px;
+  text-align: center;
+}
+
+.pctSign {
+  font-size: 11px;
+  color: var(--aicos-dim);
+}
+
+.select {
+  background: var(--aicos-card);
+  border: 1px solid var(--aicos-line);
+  border-radius: 9px;
+  padding: 6px 9px;
+  font-size: 11px;
+  color: var(--aicos-brown);
+  outline: none;
+  font-family: var(--aicos-font-jp);
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.delBtn {
+  background: rgba(199, 91, 91, 0.1);
+  border: 1px solid rgba(199, 91, 91, 0.4);
+  color: var(--aicos-danger);
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(46, 124, 214, 0.08);
+  border: 1px dashed var(--aicos-holo);
+  color: var(--aicos-holo);
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--aicos-font-jp);
+  margin-top: 12px;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.kpiCard {
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-card);
+  padding: 13px;
+  background: var(--aicos-card);
+}
+
+.kpiLabel {
+  font-size: 10px;
+  color: var(--aicos-dim);
+  letter-spacing: 0.08em;
+}
+
+.kpiValue {
+  font-family: var(--aicos-font-en);
+  font-size: 19px;
+  color: var(--aicos-brown);
+  font-weight: 700;
+  margin: 5px 0 2px;
+}
+
+.kpiDelta {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.kpiEdit {
+  display: grid;
+  gap: 6px;
+}
+
+.kpiEditRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.deltaInput {
+  composes: input;
+  font-size: 11px;
+  padding: 6px 9px;
+  width: 88px;
+}
+
+.goodBtn {
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid var(--aicos-danger);
+  color: var(--aicos-danger);
+}
+
+.goodBtn[data-good='true'] {
+  border-color: var(--aicos-green);
+  color: var(--aicos-green);
+}
