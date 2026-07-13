@@ -1,15 +1,31 @@
 import { useApp } from '../state/AppContext';
+import { useCompanyData } from '../state/CompanyDataContext';
 import { EMPLOYEES, employeeById } from '../data/employees';
 import { ALL_ROOMS, ROOM_HOSTS } from '../data/rooms';
-import { COMPANY_HEALTH_PCT, FEED_BASE, VITALS } from '../data/lobby';
+import { COMPANY_HEALTH_PCT } from '../data/lobby';
 import { Face } from '../components/Face';
 import { Ring } from '../components/Ring';
 import type { RoomId } from '../types';
 import styles from './Lobby.module.css';
 
+const relativeTime = (iso: string): string => {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (mins < 1) return 'たった今';
+  if (mins < 60) return `${mins}分前`;
+  return `${Math.round(mins / 60)}時間前`;
+};
+
 /** Atrium lobby (design pack's adopted variant A) — README §7.1. */
 export function Lobby() {
   const { go } = useApp();
+  const { visionProgressPct, activeWorkflowsCount, pendingDecisionsCount, employeeStates, feed } = useCompanyData();
+
+  const vitals = [
+    { k: 'ミッション進捗', v: `${visionProgressPct}%` },
+    { k: '稼働中ワークフロー', v: `${activeWorkflowsCount}件` },
+    { k: '承認待ちの意思決定', v: `${pendingDecisionsCount}件` },
+    { k: 'AI社員 稼働率', v: '100%' },
+  ];
 
   return (
     <div className={styles.lobby}>
@@ -36,7 +52,7 @@ export function Lobby() {
               sub="COMPANY HEALTH"
             />
             <div className={styles.vitals}>
-              {VITALS.map((v) => (
+              {vitals.map((v) => (
                 <div key={v.k} className={styles.vitalRow}>
                   <span className={styles.vitalKey}>{v.k}</span>
                   <span className={styles.vitalVal}>{v.v}</span>
@@ -55,7 +71,7 @@ export function Lobby() {
                     <div className={styles.employeeName} style={{ color: e.color }}>
                       {e.name} <span className={styles.employeeRole}>{e.role}</span>
                     </div>
-                    <div className={styles.employeeActivity}>{e.activity}</div>
+                    <div className={styles.employeeActivity}>{employeeStates[e.id]?.activity ?? e.activity}</div>
                   </div>
                 </div>
               ))}
@@ -96,10 +112,10 @@ export function Lobby() {
           <div className={styles.feedCard}>
             <span className={styles.cardLabelHolo}>Live Activity</span>
             <div className={styles.feedList}>
-              {FEED_BASE.map((f, i) => {
-                const emp = employeeById(f.by);
+              {feed.map((f) => {
+                const emp = employeeById(f.employeeId);
                 return (
-                  <div key={i} className={styles.feedRow}>
+                  <div key={f.id} className={styles.feedRow}>
                     <Face emp={emp} size={28} working={false} />
                     <div className={styles.feedText}>
                       <span style={{ color: emp.color, fontWeight: 800, fontFamily: 'var(--aicos-font-jp)' }}>
@@ -107,7 +123,7 @@ export function Lobby() {
                       </span>{' '}
                       {f.text}
                     </div>
-                    <span className={styles.feedTime}>{f.t}</span>
+                    <span className={styles.feedTime}>{relativeTime(f.createdAt)}</span>
                   </div>
                 );
               })}

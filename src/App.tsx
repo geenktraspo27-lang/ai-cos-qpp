@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { AppProvider, useApp } from './state/AppContext';
 import { AuthProvider, useAuth } from './state/AuthContext';
+import { CompanyDataProvider } from './state/CompanyDataContext';
 import { Auth } from './rooms/Auth';
 import { Header } from './components/Header';
 import { FloorNav } from './components/FloorNav';
@@ -117,9 +118,11 @@ function Gate() {
   if (!session) return <Auth />;
 
   return (
-    <AppProvider>
-      <Shell />
-    </AppProvider>
+    <CompanyDataProvider>
+      <AppProvider>
+        <Shell />
+      </AppProvider>
+    </CompanyDataProvider>
   );
 }
 

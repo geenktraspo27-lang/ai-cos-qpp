@@ -3,18 +3,18 @@ import { RoomShell } from '../components/RoomShell';
 import { Ring } from '../components/Ring';
 import { Face } from '../components/Face';
 import { useApp } from '../state/AppContext';
-import { usePersistedState } from '../lib/usePersistedState';
+import { useCompanyData } from '../state/CompanyDataContext';
 import { EMPLOYEES, employeeById } from '../data/employees';
-import { DEFAULT_GOALS, DEFAULT_KPIS, DEFAULT_VISION, MISSION_PROGRESS_PCT } from '../data/mission';
-import type { EmployeeId, Kpi, StrategicGoal } from '../types';
+import type { EmployeeId } from '../types';
 import styles from './Mission.module.css';
 
 /** Mission Room (経営戦略室) — Vision, Strategic Goals, KPI/KDI, all founder-editable. README §7.2/§10. */
 export function Mission() {
   const { showToast } = useApp();
-  const [vision, setVision] = usePersistedState('vision', DEFAULT_VISION);
-  const [goals, setGoals] = usePersistedState<StrategicGoal[]>('goals', DEFAULT_GOALS);
-  const [kpis, setKpis] = usePersistedState<Kpi[]>('kpis', DEFAULT_KPIS);
+  const {
+    vision, visionProgressPct, goals, kpis,
+    updateVision, addGoal, updateGoal, removeGoal, addKpi, updateKpi, removeKpi,
+  } = useCompanyData();
 
   const [editVision, setEditVision] = useState(false);
   const [editGoals, setEditGoals] = useState(false);
@@ -24,30 +24,6 @@ export function Mission() {
     setOn(!on);
     if (on) showToast('保存しました');
   };
-
-  const updateGoal = (i: number, field: 'name' | 'pct', value: string) => {
-    setGoals((prev) =>
-      prev.map((g, j) =>
-        j === i
-          ? { ...g, [field]: field === 'pct' ? Math.max(0, Math.min(100, parseInt(value, 10) || 0)) : value }
-          : g,
-      ),
-    );
-  };
-  const setGoalOwner = (i: number, owner: EmployeeId) => {
-    setGoals((prev) => prev.map((g, j) => (j === i ? { ...g, owner } : g)));
-  };
-  const addGoal = () => setGoals((prev) => [...prev, { name: '新しい戦略目標', pct: 0, owner: 'nova' }]);
-  const removeGoal = (i: number) => setGoals((prev) => prev.filter((_, j) => j !== i));
-
-  const updateKpi = (i: number, field: keyof Kpi, value: string) => {
-    setKpis((prev) => prev.map((k, j) => (j === i ? { ...k, [field]: value } : k)));
-  };
-  const toggleKpiGood = (i: number) => {
-    setKpis((prev) => prev.map((k, j) => (j === i ? { ...k, good: !k.good } : k)));
-  };
-  const addKpi = () => setKpis((prev) => [...prev, { label: '新しい指標', value: '—', delta: '', good: true }]);
-  const removeKpi = (i: number) => setKpis((prev) => prev.filter((_, j) => j !== i));
 
   return (
     <RoomShell roomId="mission">
@@ -69,13 +45,13 @@ export function Mission() {
           ) : (
             <textarea
               value={vision}
-              onChange={(e) => setVision(e.target.value)}
+              onChange={(e) => updateVision(e.target.value)}
               className={styles.visionInput}
             />
           )}
           <div className={styles.visionMeta}>MIRAI WORKS Inc. — FY2026 Strategic Mission</div>
           <div className={styles.visionRing}>
-            <Ring pct={MISSION_PROGRESS_PCT} size={132} color="#2E7CD6" sub="MISSION PROGRESS" />
+            <Ring pct={visionProgressPct} size={132} color="#2E7CD6" sub="MISSION PROGRESS" />
           </div>
         </div>
       </div>
@@ -93,10 +69,10 @@ export function Mission() {
             </button>
           </div>
           <div className={styles.goalsList}>
-            {goals.map((g, i) => {
-              const owner = employeeById(g.owner);
+            {goals.map((g) => {
+              const owner = employeeById(g.ownerEmployeeId);
               return (
-                <div key={i}>
+                <div key={g.id}>
                   {!editGoals ? (
                     <div>
                       <div className={styles.goalRow}>
@@ -124,10 +100,10 @@ export function Mission() {
                       <div className={styles.goalEditRow}>
                         <input
                           value={g.name}
-                          onChange={(e) => updateGoal(i, 'name', e.target.value)}
+                          onChange={(e) => updateGoal(g.id, { name: e.target.value })}
                           className={styles.input}
                         />
-                        <button onClick={() => removeGoal(i)} aria-label="削除" className={styles.delBtn}>
+                        <button onClick={() => removeGoal(g.id)} aria-label="削除" className={styles.delBtn}>
                           ✕
                         </button>
                       </div>
@@ -135,13 +111,15 @@ export function Mission() {
                         <input
                           type="number"
                           value={g.pct}
-                          onChange={(e) => updateGoal(i, 'pct', e.target.value)}
+                          onChange={(e) =>
+                            updateGoal(g.id, { pct: Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0)) })
+                          }
                           className={styles.pctInput}
                         />
                         <span className={styles.pctSign}>%</span>
                         <select
-                          value={g.owner}
-                          onChange={(e) => setGoalOwner(i, e.target.value as EmployeeId)}
+                          value={g.ownerEmployeeId}
+                          onChange={(e) => updateGoal(g.id, { ownerEmployeeId: e.target.value as EmployeeId })}
                           className={styles.select}
                         >
                           {EMPLOYEES.map((e) => (
@@ -176,8 +154,8 @@ export function Mission() {
             </button>
           </div>
           <div className={styles.kpiGrid}>
-            {kpis.map((k, i) => (
-              <div key={i} className={styles.kpiCard}>
+            {kpis.map((k) => (
+              <div key={k.id} className={styles.kpiCard}>
                 {!editKpis ? (
                   <div>
                     <div className={styles.kpiLabel}>{k.label}</div>
@@ -193,31 +171,31 @@ export function Mission() {
                   <div className={styles.kpiEdit}>
                     <input
                       value={k.label}
-                      onChange={(e) => updateKpi(i, 'label', e.target.value)}
+                      onChange={(e) => updateKpi(k.id, { label: e.target.value })}
                       placeholder="指標名"
                       className={styles.smallInput}
                     />
                     <input
                       value={k.value}
-                      onChange={(e) => updateKpi(i, 'value', e.target.value)}
+                      onChange={(e) => updateKpi(k.id, { value: e.target.value })}
                       placeholder="値"
                       className={styles.input}
                     />
                     <div className={styles.kpiEditRow}>
                       <input
                         value={k.delta}
-                        onChange={(e) => updateKpi(i, 'delta', e.target.value)}
+                        onChange={(e) => updateKpi(k.id, { delta: e.target.value })}
                         placeholder="増減"
                         className={styles.deltaInput}
                       />
                       <button
-                        onClick={() => toggleKpiGood(i)}
+                        onClick={() => updateKpi(k.id, { good: !k.good })}
                         className={styles.goodBtn}
                         data-good={k.good}
                       >
                         {k.good ? '↑ 好調' : '↓ 注意'}
                       </button>
-                      <button onClick={() => removeKpi(i)} aria-label="削除" className={styles.delBtn}>
+                      <button onClick={() => removeKpi(k.id)} aria-label="削除" className={styles.delBtn}>
                         ✕
                       </button>
                     </div>

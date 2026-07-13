@@ -1,7 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import { useApp } from '../state/AppContext';
+import { useCompanyData } from '../state/CompanyDataContext';
 import { EMPLOYEES, employeeById } from '../data/employees';
-import { useTasks } from '../state/useTasks';
 import { Face } from './Face';
 import styles from './EmployeePanel.module.css';
 
@@ -18,13 +18,14 @@ interface EmployeePanelProps {
 /** Right-hand AI Employee Panel: selector row, portrait card, tasks, chat. */
 export function EmployeePanel({ variant = 'desktop', onClose }: EmployeePanelProps) {
   const { eId, selectEmployee, showToast } = useApp();
-  const { tasksOf, updateTask, addTask, removeTask } = useTasks();
+  const { employeeStates, tasksByEmployee, updateTask, addTask, removeTask } = useCompanyData();
   const [editTasks, setEditTasks] = useState(false);
   const [chat, setChat] = useState<Partial<Record<string, ChatMessage[]>>>({});
   const [draft, setDraft] = useState('');
 
   const emp = employeeById(eId);
-  const tasks = tasksOf(eId);
+  const state = employeeStates[eId];
+  const tasks = tasksByEmployee[eId] ?? [];
   const chatLog = chat[eId] ?? [];
 
   const toggleEditTasks = () => {
@@ -88,7 +89,7 @@ export function EmployeePanel({ variant = 'desktop', onClose }: EmployeePanelPro
           <span className={styles.workingDot} />
           稼働中
         </div>
-        <div className={styles.activity}>{emp.activity}</div>
+        <div className={styles.activity}>{state?.activity ?? emp.activity}</div>
       </div>
 
       <div className={styles.card}>
@@ -100,26 +101,26 @@ export function EmployeePanel({ variant = 'desktop', onClose }: EmployeePanelPro
         </div>
         {!editTasks ? (
           <div>
-            {tasks.map((t, i) => (
-              <div key={i} className={styles.taskRow}>
+            {tasks.map((t) => (
+              <div key={t.id} className={styles.taskRow}>
                 <span className={styles.taskDot} style={{ color: emp.color }}>
                   ●
                 </span>
-                <span>{t}</span>
+                <span>{t.text}</span>
               </div>
             ))}
           </div>
         ) : (
           <div className={styles.taskEditList}>
-            {tasks.map((t, i) => (
-              <div key={i} className={styles.taskEditRow}>
+            {tasks.map((t) => (
+              <div key={t.id} className={styles.taskEditRow}>
                 <input
-                  value={t}
-                  onChange={(e) => updateTask(eId, i, e.target.value)}
+                  value={t.text}
+                  onChange={(e) => updateTask(t.id, e.target.value)}
                   className={styles.taskInput}
                 />
                 <button
-                  onClick={() => removeTask(eId, i)}
+                  onClick={() => removeTask(eId, t.id)}
                   aria-label="削除"
                   className={styles.taskDel}
                 >
@@ -136,7 +137,7 @@ export function EmployeePanel({ variant = 'desktop', onClose }: EmployeePanelPro
 
       <div className={styles.recCard}>
         <span className={styles.cardLabel}>{emp.name} からの提案</span>
-        <div className={styles.recText}>{emp.rec}</div>
+        <div className={styles.recText}>{state?.rec ?? emp.rec}</div>
       </div>
 
       <div className={styles.chatArea}>

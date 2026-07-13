@@ -1,21 +1,29 @@
 import { useApp } from '../state/AppContext';
 import { useAuth } from '../state/AuthContext';
+import { useCompanyData } from '../state/CompanyDataContext';
 import { signOut } from '../lib/auth';
 import { employeeById } from '../data/employees';
 import { ALL_ROOMS } from '../data/rooms';
-import { NOTIFS } from '../data/lobby';
 import { Face } from './Face';
 import styles from './Header.module.css';
+
+const relativeTime = (iso: string): string => {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (mins < 1) return 'たった今';
+  if (mins < 60) return `${mins}分前`;
+  return `${Math.round(mins / 60)}時間前`;
+};
 
 /** Top app bar: mobile menu toggle, AI CORE brand, clock, notifications, founder badge. */
 export function Header() {
   const { isMobile, isDesktop, toggleNav, notifOpen, toggleNotif, closeNotif, now, go } = useApp();
   const { profile } = useAuth();
+  const { notifications } = useCompanyData();
 
-  const unreadCount = NOTIFS.filter((n) => n.unread).length;
+  const unreadCount = notifications.filter((n) => n.unread).length;
   const clock = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 
-  const handleNotifClick = (room: (typeof NOTIFS)[number]['room']) => {
+  const handleNotifClick = (room: (typeof notifications)[number]['room']) => {
     go(room);
     closeNotif();
   };
@@ -64,12 +72,12 @@ export function Header() {
                 <span>NOTIFICATIONS</span>
                 <span className={styles.dropdownCount}>{unreadCount} 件の新着</span>
               </div>
-              {NOTIFS.map((n, i) => {
-                const emp = employeeById(n.by);
+              {notifications.map((n) => {
+                const emp = employeeById(n.employeeId);
                 const room = ALL_ROOMS.find((r) => r.id === n.room);
                 return (
                   <button
-                    key={i}
+                    key={n.id}
                     onClick={() => handleNotifClick(n.room)}
                     className={styles.notifRow}
                     style={{ background: n.unread ? 'rgba(229,106,154,0.05)' : 'transparent' }}
@@ -80,7 +88,7 @@ export function Header() {
                         <b style={{ color: emp.color }}>{emp.name}</b> {n.text}
                       </div>
                       <div className={styles.notifMeta}>
-                        {n.t} · {room ? room.jp : 'Lobby'}
+                        {relativeTime(n.createdAt)} · {room ? room.jp : 'Lobby'}
                       </div>
                     </div>
                     {n.unread && <span className={styles.unreadDot} />}
