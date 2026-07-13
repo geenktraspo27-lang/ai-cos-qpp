@@ -6,14 +6,19 @@
   z-index: 10;
 }
 
+/*
+ * A soft glow rather than a hard-edged ring: a stroked circle reads as a
+ * shape sitting on top of whatever card/button it crosses. A blurred radial
+ * gradient with no edge just brightens the content underneath instead.
+ */
 .ring {
   position: absolute;
   left: 50%;
   top: 45%;
-  width: 180px;
-  height: 180px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
-  border: 2px solid rgba(77, 163, 255, 0.7);
+  background: radial-gradient(circle, rgba(120, 190, 255, 0.55) 0%, rgba(120, 190, 255, 0.2) 40%, transparent 72%);
   transform: translate(-50%, -50%);
   animation: aicos-core-flash 0.6s ease-out forwards;
 }
@@ -27,5 +32,6 @@
     rgba(217, 179, 108, 0.28) 50%,
     transparent 60%
   );
+  mix-blend-mode: screen;
   animation: aicos-sweep 0.6s ease-out forwards;
 }
