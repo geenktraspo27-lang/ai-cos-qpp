@@ -1,5 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { AppProvider, useApp } from './state/AppContext';
+import { AuthProvider, useAuth } from './state/AuthContext';
+import { Auth } from './rooms/Auth';
 import { Header } from './components/Header';
 import { FloorNav } from './components/FloorNav';
 import { EmployeePanel } from './components/EmployeePanel';
@@ -108,11 +110,24 @@ function Shell() {
   );
 }
 
-function App() {
+function Gate() {
+  const { session, loading } = useAuth();
+
+  if (loading) return <div className={styles.loadingScreen}>読み込み中…</div>;
+  if (!session) return <Auth />;
+
   return (
     <AppProvider>
       <Shell />
     </AppProvider>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
   );
 }
 

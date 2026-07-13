@@ -7,6 +7,17 @@
   position: relative;
 }
 
+.loadingScreen {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, var(--aicos-night-gradient-top) 0%, var(--aicos-night-gradient-bottom) 62%);
+  color: #b9a98c;
+  font-family: var(--aicos-font-jp);
+  font-size: 13px;
+}
+
 .bgLayer {
   position: fixed;
   inset: 0;

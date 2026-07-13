@@ -1,4 +1,6 @@
 import { useApp } from '../state/AppContext';
+import { useAuth } from '../state/AuthContext';
+import { signOut } from '../lib/auth';
 import { employeeById } from '../data/employees';
 import { ALL_ROOMS } from '../data/rooms';
 import { NOTIFS } from '../data/lobby';
@@ -8,6 +10,7 @@ import styles from './Header.module.css';
 /** Top app bar: mobile menu toggle, AI CORE brand, clock, notifications, founder badge. */
 export function Header() {
   const { isMobile, isDesktop, toggleNav, notifOpen, toggleNotif, closeNotif, now, go } = useApp();
+  const { profile } = useAuth();
 
   const unreadCount = NOTIFS.filter((n) => n.unread).length;
   const clock = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
@@ -40,7 +43,7 @@ export function Header() {
       </div>
 
       {isDesktop && <div className={styles.divider} />}
-      {isDesktop && <div className={styles.companyName}>MIRAI WORKS Inc.</div>}
+      {isDesktop && <div className={styles.companyName}>{profile?.companyName}</div>}
 
       <div className={styles.right}>
         {isDesktop && (
@@ -89,14 +92,17 @@ export function Header() {
         </div>
 
         <div className={styles.user}>
-          <div className={styles.userAvatar}>げ</div>
+          <div className={styles.userAvatar}>{profile?.displayName?.[0] ?? '?'}</div>
           {isDesktop && (
             <div>
-              <div className={styles.userName}>げんき</div>
-              <div className={styles.userRole}>FOUNDER</div>
+              <div className={styles.userName}>{profile?.displayName}</div>
+              <div className={styles.userRole}>{profile?.role === 'founder' ? 'FOUNDER' : 'MEMBER'}</div>
             </div>
           )}
         </div>
+        <button onClick={() => void signOut()} aria-label="ログアウト" className={styles.iconBtn}>
+          ⏻
+        </button>
       </div>
     </header>
   );

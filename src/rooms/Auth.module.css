@@ -1,0 +1,116 @@
+.page {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, var(--aicos-night-gradient-top) 0%, var(--aicos-night-gradient-bottom) 62%);
+  padding: 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--aicos-paper);
+  border: 1px solid var(--aicos-line);
+  border-radius: var(--aicos-radius-panel);
+  box-shadow: var(--aicos-shadow-panel);
+  padding: 32px 28px;
+}
+
+.brand {
+  font-family: var(--aicos-font-en);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.12em;
+  color: var(--aicos-gold);
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--aicos-cream-dim);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  font-family: var(--aicos-font-jp);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--aicos-dim);
+  cursor: pointer;
+}
+
+.tab[data-active='true'] {
+  background: var(--aicos-card);
+  color: var(--aicos-brown);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.label {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--aicos-dim);
+  font-weight: 700;
+}
+
+.input {
+  background: var(--aicos-card);
+  border: 1px solid var(--aicos-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--aicos-brown);
+  outline: none;
+  font-family: var(--aicos-font-jp);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--aicos-danger);
+  background: rgba(199, 91, 91, 0.08);
+  border: 1px solid rgba(199, 91, 91, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.submitBtn {
+  margin-top: 4px;
+  background: linear-gradient(135deg, var(--aicos-gold), var(--aicos-gold-bright));
+  border: none;
+  color: #fff7e8;
+  padding: 12px;
+  border-radius: 24px;
+  cursor: pointer;
+  font-family: var(--aicos-font-jp);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 3px 10px rgba(184, 147, 78, 0.4);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.confirmText {
+  font-size: 13px;
+  color: var(--aicos-brown-soft);
+  line-height: 1.7;
+  text-align: center;
+  margin: 0;
+}
