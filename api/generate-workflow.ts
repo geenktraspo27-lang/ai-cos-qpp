@@ -1,17 +1,28 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { AnthropicLLMService } from './_lib/llmService.ts';
+import { lookupCompanyEmployee } from './_lib/employeeLookup.ts';
 
-/** 課題1's original fixed stage set — the fallback when the LLM path fails. */
+/** 課題1's original fixed stage set — the fallback whenever the LLM path can't run. */
 const FALLBACK_STAGES = ['計画', '実行', 'レビュー', '完了'];
 
 interface ApiRequest extends IncomingMessage {
   body?: unknown;
 }
 
+type FallbackReason = 'employee_lookup_failed' | 'llm_failed';
+
 interface GenerateWorkflowResponseBody {
   workflowName: string;
   stages: string[];
   usedFallback: boolean;
+  fallbackReason?: FallbackReason;
+}
+
+interface GenerateWorkflowRequestBody {
+  companyVision?: unknown;
+  goalTitle?: unknown;
+  goalDescription?: unknown;
+  employee?: { id?: unknown; name?: unknown; role?: unknown; specialty?: unknown };
 }
 
 function sendJson(res: ServerResponse, status: number, body: unknown) {
@@ -20,11 +31,18 @@ function sendJson(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
+function fallbackBody(workflowName: string, reason: FallbackReason): GenerateWorkflowResponseBody {
+  return { workflowName, stages: FALLBACK_STAGES, usedFallback: true, fallbackReason: reason };
+}
+
 /**
- * Server-only endpoint: builds Nova's Workflow-design prompt, calls the LLM,
- * and returns either its JSON result or (on any failure) the same fixed
- * Workflow 課題1 always used. ANTHROPIC_API_KEY never reaches the client —
- * saving the Workflow to Supabase remains the existing client-side flow in
+ * Server-only endpoint: Nova designs a Workflow for the Goal's specific
+ * 担当AI社員. The client's `employee` object is never trusted directly —
+ * `employee.id` is looked up against Supabase (RLS-scoped to the caller's
+ * own company via their access token), and the prompt is built from that
+ * canonical record, not from the client-supplied name/role/specialty.
+ * ANTHROPIC_API_KEY never reaches the client — saving the Workflow to
+ * Supabase remains the existing client-side flow in
  * CompanyDataContext.createWorkflowFromGoal.
  */
 export default async function handler(req: ApiRequest, res: ServerResponse) {
@@ -33,36 +51,44 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
     return;
   }
 
-  const body = req.body as { goalName?: unknown; missionText?: unknown } | undefined;
-  const goalName = typeof body?.goalName === 'string' ? body.goalName.trim() : '';
-  const missionText = typeof body?.missionText === 'string' ? body.missionText.trim() : '';
+  const body = req.body as GenerateWorkflowRequestBody | undefined;
+  const companyVision = typeof body?.companyVision === 'string' ? body.companyVision.trim() : '';
+  const goalTitle = typeof body?.goalTitle === 'string' ? body.goalTitle.trim() : '';
+  const goalDescription = typeof body?.goalDescription === 'string' ? body.goalDescription.trim() : undefined;
+  const employeeId = typeof body?.employee?.id === 'string' ? body.employee.id.trim() : '';
 
-  if (!goalName || !missionText) {
-    sendJson(res, 400, { error: 'goalName and missionText are required' });
+  if (!goalTitle || !employeeId) {
+    sendJson(res, 400, { error: 'goalTitle and employee.id are required' });
     return;
   }
 
-  const fallback: GenerateWorkflowResponseBody = {
-    workflowName: goalName,
-    stages: FALLBACK_STAGES,
-    usedFallback: true,
-  };
+  const authHeader = req.headers.authorization;
+  const accessToken = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '';
+
+  // Never trust the client's own name/role/specialty — re-derive the
+  // employee from Supabase, scoped to the caller's company via their JWT.
+  const employee = await lookupCompanyEmployee(accessToken, employeeId);
+  if (!employee) {
+    sendJson(res, 200, fallbackBody(goalTitle, 'employee_lookup_failed'));
+    return;
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    sendJson(res, 200, fallback);
+    sendJson(res, 200, fallbackBody(goalTitle, 'llm_failed'));
     return;
   }
 
   try {
     const llm = new AnthropicLLMService(apiKey);
     const result = await llm.generateWorkflow({
-      employeeName: 'Nova',
-      employeeRole: 'CEO',
-      missionText,
+      companyVision,
+      goalTitle,
+      goalDescription,
+      employee: { name: employee.name, roleJp: employee.roleJp, persona: employee.persona },
     });
     sendJson(res, 200, { ...result, usedFallback: false } satisfies GenerateWorkflowResponseBody);
   } catch {
-    sendJson(res, 200, fallback);
+    sendJson(res, 200, fallbackBody(goalTitle, 'llm_failed'));
   }
 }

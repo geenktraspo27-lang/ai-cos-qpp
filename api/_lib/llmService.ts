@@ -3,14 +3,20 @@ import Anthropic from '@anthropic-ai/sdk';
 /**
  * Provider-agnostic LLM surface for AI-COS. AI employees call this — never
  * an SDK client directly — so swapping providers later doesn't touch caller
- * code. Only generateWorkflow is implemented for 課題5; the rest are
+ * code. Only generateWorkflow is implemented for 課題5/6; the rest are
  * reserved for future 課題s (document generation, knowledge summarization,
  * employee chat).
  */
 export interface GenerateWorkflowInput {
-  employeeName: string;
-  employeeRole: string;
-  missionText: string;
+  companyVision: string;
+  goalTitle: string;
+  goalDescription?: string;
+  /** Always the caller-verified canonical record — never client-trusted fields. */
+  employee: {
+    name: string;
+    roleJp: string;
+    persona: string;
+  };
 }
 
 export interface GenerateWorkflowResult {
@@ -30,22 +36,39 @@ const REQUEST_TIMEOUT_MS = 20_000;
 const MIN_STAGES = 4;
 const MAX_STAGES = 8;
 
-function buildWorkflowPrompt({ employeeName, employeeRole, missionText }: GenerateWorkflowInput): string {
-  return `あなたはAI-COSの${employeeRole}です。
+/**
+ * 課題6: Nova stays the designer — she analyzes the Strategic Goal, then
+ * designs a Workflow the specific担当AI社員 can execute, reflecting their
+ * role/specialty. The LLM is never asked to *become* the employee, only to
+ * design work for them, and it never sees or decides any DB identifier
+ * (employee/goal/company id, progress, or workflow status).
+ */
+function buildWorkflowPrompt({ companyVision, goalTitle, goalDescription, employee }: GenerateWorkflowInput): string {
+  return `あなたはAI-COSのCEO、Novaです。
 
-名前は${employeeName}です。
+会社のStrategic Goalを分析し、担当AI社員が実行できる
+具体的なWorkflowを設計してください。
 
-Missionを実現するためのWorkflowを設計してください。
+会社のVision
+${companyVision}
+
+Strategic Goal
+${goalTitle}${goalDescription ? `\n${goalDescription}` : ''}
+
+担当AI社員
+名前：${employee.name}
+役割：${employee.roleJp}
+専門分野：${employee.persona}
+
+担当社員の専門性を反映しつつ、Mission全体を達成できる
+4〜8件の連続したステージを作成してください。
 
 条件
 
 ・4〜8ステップ
 ・順番通り実行できる
 ・日本語
-・JSONのみ
-
-Mission
-${missionText}`;
+・JSONのみ`;
 }
 
 function parseWorkflowResult(raw: string): GenerateWorkflowResult {

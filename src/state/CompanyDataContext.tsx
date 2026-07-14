@@ -579,13 +579,15 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   const holdDecision = useCallback((id: string) => decideDecision(id, 'hold'), [decideDecision]);
 
   /**
-   * 課題5: Mission Room's Goals spawn a Workflow whose name and stages are
+   * 課題5/6: Mission Room's Goals spawn a Workflow whose name and stages are
    * designed by Nova via the server-side LLMService (/api/generate-workflow —
-   * the ANTHROPIC_API_KEY never reaches the client). Saving the Workflow
-   * itself still goes through the same Supabase insert 課題1 introduced; the
-   * LLM only supplies workflowName/stages, with 課題1's fixed 4-stage
-   * template as the fallback if the LLM call fails or returns something
-   * that doesn't validate.
+   * the ANTHROPIC_API_KEY never reaches the client), reflecting the Goal's
+   * assigned AI employee's role/specialty. Saving the Workflow itself still
+   * goes through the same Supabase insert 課題1 introduced; the LLM only
+   * supplies workflowName/stages. The server re-derives the employee from
+   * Supabase (RLS-scoped to this company) rather than trusting the
+   * name/role/specialty sent here — those are just a hint for which
+   * employee.id to look up.
    */
   const createWorkflowFromGoal = useCallback(
     async (goalId: string) => {
@@ -594,21 +596,40 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       if (!goal) return;
       if (workflows.some((w) => w.sourceGoalId === goalId)) return;
 
+      const ownerEmployee = employeeById(goal.ownerEmployeeId);
       let workflowName = goal.name;
       let stages: string[] = DEFAULT_WORKFLOW_STAGES;
       let usedFallback = true;
+      let fallbackReason: 'employee_lookup_failed' | 'llm_failed' | undefined;
 
       try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const res = await fetch('/api/generate-workflow', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
           body: JSON.stringify({
-            goalName: goal.name,
-            missionText: `会社のVision: ${vision}\n実現したいGoal: ${goal.name}`,
+            companyVision: vision,
+            goalTitle: goal.name,
+            employee: {
+              id: ownerEmployee.id,
+              name: ownerEmployee.name,
+              role: ownerEmployee.roleJp,
+              specialty: ownerEmployee.persona,
+            },
           }),
         });
         if (res.ok) {
-          const data = (await res.json()) as { workflowName?: unknown; stages?: unknown; usedFallback?: unknown };
+          const data = (await res.json()) as {
+            workflowName?: unknown;
+            stages?: unknown;
+            usedFallback?: unknown;
+            fallbackReason?: unknown;
+          };
           const validStages =
             Array.isArray(data.stages) &&
             data.stages.length >= 4 &&
@@ -618,6 +639,10 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
             workflowName = data.workflowName;
             stages = data.stages as string[];
             usedFallback = data.usedFallback === true;
+            fallbackReason =
+              data.fallbackReason === 'employee_lookup_failed' || data.fallbackReason === 'llm_failed'
+                ? data.fallbackReason
+                : undefined;
           }
         }
       } catch {
@@ -656,7 +681,11 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       ]);
       setActiveWorkflowsCount((count) => count + 1);
 
-      const feedText = usedFallback ? 'Novaは標準Workflowを生成しました' : 'NovaがWorkflowを設計しました';
+      const feedText = !usedFallback
+        ? 'NovaがWorkflowを設計しました'
+        : fallbackReason === 'employee_lookup_failed'
+          ? 'Novaは担当社員情報を取得できなかったため、標準Workflowを生成しました'
+          : 'Novaは標準Workflowを生成しました';
 
       const { data: feedRow } = await supabase
         .from('activity_feed')
