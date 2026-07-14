@@ -1,17 +1,36 @@
+import { useState } from 'react';
 import { RoomShell } from '../components/RoomShell';
 import { Face } from '../components/Face';
 import { employeeById } from '../data/employees';
+import { useApp } from '../state/AppContext';
 import { useCompanyData } from '../state/CompanyDataContext';
 import styles from './Workflow.module.css';
 
-/** Workflow Room (オペレーション管制センター) — README §7.7. */
+/** Workflow Room (オペレーション管制センター) — README §7.7. 課題2: stage advance + completion. */
 export function Workflow() {
-  const { workflows } = useCompanyData();
+  const { showToast } = useApp();
+  const { workflows, advanceWorkflowStage } = useCompanyData();
+  const [advancing, setAdvancing] = useState<Record<string, boolean>>({});
+
+  const handleAdvance = async (workflowId: string, isFinalAdvance: boolean) => {
+    setAdvancing((prev) => ({ ...prev, [workflowId]: true }));
+    try {
+      await advanceWorkflowStage(workflowId);
+      showToast(isFinalAdvance ? 'Workflowが完了しました' : '次のステージに進みました');
+    } catch {
+      showToast('ステージの更新に失敗しました');
+    } finally {
+      setAdvancing((prev) => ({ ...prev, [workflowId]: false }));
+    }
+  };
+
   return (
     <RoomShell roomId="workflow">
       <div className={styles.list}>
         {workflows.map((w) => {
           const owner = employeeById(w.ownerEmployeeId);
+          const isComplete = w.currentStage >= w.stages.length - 1;
+          const isFinalAdvance = w.currentStage === w.stages.length - 2;
           return (
             <div key={w.id} className={styles.card}>
               <div className={styles.head}>
@@ -58,6 +77,19 @@ export function Workflow() {
                     </div>
                   );
                 })}
+              </div>
+              <div className={styles.advanceRow}>
+                {isComplete ? (
+                  <span className={styles.completeLabel}>✓ 完了</span>
+                ) : (
+                  <button
+                    onClick={() => handleAdvance(w.id, isFinalAdvance)}
+                    disabled={!!advancing[w.id]}
+                    className={styles.advanceBtn}
+                  >
+                    {advancing[w.id] ? '更新中…' : '次のステージへ進む'}
+                  </button>
+                )}
               </div>
             </div>
           );

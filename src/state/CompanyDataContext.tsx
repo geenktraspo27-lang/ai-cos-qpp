@@ -89,6 +89,15 @@ export interface WorkflowRow {
 /** 課題1: standard stage template used when a workflow is created from a Goal (no LLM generation yet). */
 const DEFAULT_WORKFLOW_STAGES = ['計画', '実行', 'レビュー', '完了'];
 
+/** 課題2: recommended progress % for the standard 4-stage template (計画/実行/レビュー/完了). */
+const STANDARD_STAGE_PERCENTS = [0, 25, 75, 100];
+
+function stagePercentFor(stageIndex: number, totalStages: number): number {
+  if (totalStages === STANDARD_STAGE_PERCENTS.length) return STANDARD_STAGE_PERCENTS[stageIndex];
+  if (totalStages <= 1) return 100;
+  return Math.round((stageIndex / (totalStages - 1)) * 100);
+}
+
 export interface IdeaRow {
   id: string;
   title: string;
@@ -186,6 +195,7 @@ interface CompanyData {
   approveDecision: (id: string) => void;
   holdDecision: (id: string) => void;
   createWorkflowFromGoal: (goalId: string) => Promise<void>;
+  advanceWorkflowStage: (workflowId: string) => Promise<void>;
 }
 
 const Ctx = createContext<CompanyData | null>(null);
@@ -643,6 +653,96 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
     [companyId, goals, workflows],
   );
 
+  /**
+   * 課題2: advance a workflow by exactly one stage. The `.eq('current_stage', ...)`
+   * guard makes the update a no-op (0 rows) if the stage already moved since
+   * we read it — belt-and-braces against double-clicks/races on top of the
+   * UI-level disabled state, so a workflow can never skip a stage.
+   */
+  const advanceWorkflowStage = useCallback(
+    async (workflowId: string) => {
+      if (!companyId) return;
+      const wf = workflows.find((w) => w.id === workflowId);
+      if (!wf) return;
+      const lastIndex = wf.stages.length - 1;
+      if (wf.currentStage >= lastIndex) return;
+
+      const nextStage = wf.currentStage + 1;
+      const isComplete = nextStage === lastIndex;
+      const nextPct = stagePercentFor(nextStage, wf.stages.length);
+
+      const { data: updated, error: updateError } = await supabase
+        .from('workflows')
+        .update({ current_stage: nextStage, pct: nextPct })
+        .eq('id', workflowId)
+        .eq('current_stage', wf.currentStage)
+        .select('id, current_stage, pct')
+        .single();
+
+      if (updateError || !updated) {
+        // Either a real error, or another click already advanced this
+        // workflow first (0 rows matched) — either way, nothing to apply.
+        return;
+      }
+
+      setWorkflows((prev) =>
+        prev.map((w) => (w.id === workflowId ? { ...w, currentStage: updated.current_stage, pct: updated.pct } : w)),
+      );
+
+      if (wf.sourceGoalId) {
+        const goalId = wf.sourceGoalId;
+        setGoals((prev) => prev.map((g) => (g.id === goalId ? { ...g, pct: nextPct } : g)));
+        void supabase.from('goals').update({ pct: nextPct }).eq('id', goalId);
+      }
+
+      const owner = employeeById(wf.ownerEmployeeId);
+      const stageLabel = wf.stages[nextStage];
+      const feedText = isComplete
+        ? `${owner.name}が「${wf.name}」を完了しました`
+        : `${owner.name}が「${wf.name}」を${stageLabel}に進めました`;
+
+      const { data: feedRow } = await supabase
+        .from('activity_feed')
+        .insert({ company_id: companyId, employee_id: wf.ownerEmployeeId, text: feedText })
+        .select('id, employee_id, text, created_at')
+        .single();
+      if (feedRow) {
+        setFeed((prev) => [
+          { id: feedRow.id, employeeId: feedRow.employee_id as EmployeeId, text: feedRow.text, createdAt: feedRow.created_at },
+          ...prev,
+        ]);
+      }
+
+      if (isComplete) {
+        const { data: notifRow } = await supabase
+          .from('notifications')
+          .insert({
+            company_id: companyId,
+            employee_id: wf.ownerEmployeeId,
+            text: `Workflow「${wf.name}」が完了しました`,
+            room: 'workflow',
+            unread: true,
+          })
+          .select('id, employee_id, text, room, unread, created_at')
+          .single();
+        if (notifRow) {
+          setNotifications((prev) => [
+            {
+              id: notifRow.id,
+              employeeId: notifRow.employee_id as EmployeeId,
+              text: notifRow.text,
+              room: notifRow.room as RoomId,
+              unread: notifRow.unread,
+              createdAt: notifRow.created_at,
+            },
+            ...prev,
+          ]);
+        }
+      }
+    },
+    [companyId, workflows],
+  );
+
   const value = useMemo<CompanyData>(
     () => ({
       loading,
@@ -684,6 +784,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       approveDecision,
       holdDecision,
       createWorkflowFromGoal,
+      advanceWorkflowStage,
     }),
     [
       loading, error, vision, visionProgressPct, goals, kpis, notifications, feed,
@@ -692,7 +793,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       financeCosts, contracts, brandKpis, campaigns, marketInsights, docCoveragePct, documents,
       refetch, updateVision, addGoal, updateGoal,
       removeGoal, addKpi, updateKpi, removeKpi, addTask, updateTask, removeTask,
-      approveDecision, holdDecision, createWorkflowFromGoal,
+      approveDecision, holdDecision, createWorkflowFromGoal, advanceWorkflowStage,
     ],
   );
 
