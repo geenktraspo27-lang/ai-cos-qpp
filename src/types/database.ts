@@ -89,8 +89,11 @@ export interface Database {
       >;
 
       ideas: Table<
-        { id: string; company_id: string; title: string; employee_id: string; tag: string; heat: number },
-        'id' | 'heat'
+        {
+          id: string; company_id: string; title: string; employee_id: string; tag: string; heat: number;
+          content: string | null; source_document_id: string | null;
+        },
+        'id' | 'heat' | 'content' | 'source_document_id'
       >;
 
       finance_summary: Table<{ company_id: string; budget_exec_pct: number; suggestion: string }, 'budget_exec_pct' | 'suggestion'>;

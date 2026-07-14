@@ -44,6 +44,14 @@
   line-height: 1.55;
 }
 
+.content {
+  font-size: 11px;
+  color: var(--aicos-dim);
+  line-height: 1.6;
+  white-space: pre-line;
+  margin: 0 0 10px;
+}
+
 .barTrack {
   height: 6px;
   background: rgba(184, 147, 78, 0.16);

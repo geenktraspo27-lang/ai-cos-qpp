@@ -19,6 +19,7 @@ export function Brain() {
                 <span className={styles.heat}>熱量 {idea.heat}</span>
               </div>
               <div className={styles.title}>{idea.title}</div>
+              {idea.content && <div className={styles.content}>{idea.content}</div>}
               <div className={styles.barTrack}>
                 <div
                   className={styles.barFill}

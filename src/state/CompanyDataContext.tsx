@@ -104,6 +104,8 @@ export interface IdeaRow {
   employeeId: EmployeeId;
   tag: string;
   heat: number;
+  content: string | null;
+  sourceDocumentId: string | null;
 }
 
 export interface FinanceKpiRow {
@@ -277,7 +279,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         supabase.from('decision_messages').select('decision_id, employee_id, text, stance, position').order('position'),
         supabase.from('decision_contributors').select('decision_id, employee_id'),
         supabase.from('workflows').select('id, name, owner_employee_id, pct, stages, current_stage, source_goal_id').eq('company_id', companyId!),
-        supabase.from('ideas').select('id, title, employee_id, tag, heat').eq('company_id', companyId!),
+        supabase.from('ideas').select('id, title, employee_id, tag, heat, content, source_document_id').eq('company_id', companyId!),
         supabase.from('finance_summary').select('budget_exec_pct, suggestion').eq('company_id', companyId!).single(),
         supabase.from('finance_kpis').select('id, label, value, position').eq('company_id', companyId!).order('position'),
         supabase.from('finance_costs').select('id, dept, pct, color, position').eq('company_id', companyId!).order('position'),
@@ -411,6 +413,8 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
           employeeId: i.employee_id as EmployeeId,
           tag: i.tag,
           heat: i.heat,
+          content: i.content,
+          sourceDocumentId: i.source_document_id,
         })),
       );
 
