@@ -1,18 +1,20 @@
 import { RoomShell } from '../components/RoomShell';
-import { AURORA_INSIGHTS, BRAND_KPIS, CAMPAIGNS, campaignStatusColor } from '../data/marketing';
+import { campaignStatusColor } from '../data/marketing';
 import { employeeById } from '../data/employees';
+import { useCompanyData } from '../state/CompanyDataContext';
 import styles from './Marketing.module.css';
 
 /** Marketing Room (ブランド&マーケティング) — README §7.6. */
 export function Marketing() {
   const aurora = employeeById('aurora');
+  const { brandKpis, campaigns, marketInsights } = useCompanyData();
   return (
     <RoomShell roomId="marketing">
       <div className={styles.healthPanel}>
         <span className={styles.cardLabelHolo}>ブランドヘルス</span>
         <div className={styles.kpiGrid}>
-          {BRAND_KPIS.map((k) => (
-            <div key={k.label} className={styles.kpiCard}>
+          {brandKpis.map((k) => (
+            <div key={k.id} className={styles.kpiCard}>
               <div className={styles.kpiLabel}>{k.label}</div>
               <div className={styles.kpiValue}>{k.value}</div>
               <div className={styles.kpiDelta}>{k.delta}</div>
@@ -25,10 +27,10 @@ export function Marketing() {
         <div className={styles.panel}>
           <span className={styles.cardLabelHolo}>キャンペーン</span>
           <div className={styles.campaignList}>
-            {CAMPAIGNS.map((c) => {
+            {campaigns.map((c) => {
               const color = campaignStatusColor(c.status);
               return (
-                <div key={c.name}>
+                <div key={c.id}>
                   <div className={styles.campaignHead}>
                     <span className={styles.campaignName}>{c.name}</span>
                     <span className={styles.statusPill} style={{ color, borderColor: color }}>
@@ -49,9 +51,9 @@ export function Marketing() {
         <div className={styles.panel}>
           <span className={styles.cardLabelHolo}>Aurora の市場インサイト</span>
           <div className={styles.insightList}>
-            {AURORA_INSIGHTS.map((text, i) => (
-              <p key={i} className={styles.insight} style={{ borderLeftColor: aurora.color }}>
-                {text}
+            {marketInsights.map((m) => (
+              <p key={m.id} className={styles.insight} style={{ borderLeftColor: aurora.color }}>
+                {m.text}
               </p>
             ))}
           </div>

@@ -57,6 +57,90 @@ export interface EmployeeState {
   rec: string;
 }
 
+export interface DiscussionMessageRow {
+  employeeId: EmployeeId;
+  text: string;
+  stance: 'dissent' | 'revision' | null;
+}
+
+export interface DecisionRow {
+  id: string;
+  title: string;
+  rec: string;
+  risk: '低' | '中' | '高';
+  byEmployeeId: EmployeeId;
+  detail: string;
+  status: 'pending' | 'approved' | 'hold';
+  discussion: DiscussionMessageRow[];
+  contributors: EmployeeId[];
+}
+
+export interface WorkflowRow {
+  id: string;
+  name: string;
+  ownerEmployeeId: EmployeeId;
+  pct: number;
+  stages: string[];
+  currentStage: number;
+}
+
+export interface IdeaRow {
+  id: string;
+  title: string;
+  employeeId: EmployeeId;
+  tag: string;
+  heat: number;
+}
+
+export interface FinanceKpiRow {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface FinanceCostRow {
+  id: string;
+  dept: string;
+  pct: number;
+  color: string;
+}
+
+export interface ContractRow {
+  id: string;
+  name: string;
+  due: string;
+  note: string;
+}
+
+export interface BrandKpiRow {
+  id: string;
+  label: string;
+  value: string;
+  delta: string;
+}
+
+export interface CampaignRow {
+  id: string;
+  name: string;
+  status: string;
+  pct: number;
+}
+
+export interface MarketInsightRow {
+  id: string;
+  employeeId: EmployeeId;
+  text: string;
+}
+
+export interface DocumentRow {
+  id: string;
+  title: string;
+  cat: string;
+  employeeId: EmployeeId;
+  date: string;
+  summary: string;
+}
+
 interface CompanyData {
   loading: boolean;
   error: string | null;
@@ -70,6 +154,19 @@ interface CompanyData {
   tasksByEmployee: Partial<Record<EmployeeId, TaskRow[]>>;
   activeWorkflowsCount: number;
   pendingDecisionsCount: number;
+  decisions: DecisionRow[];
+  workflows: WorkflowRow[];
+  ideas: IdeaRow[];
+  financeBudgetExecPct: number;
+  financeSuggestion: string;
+  financeKpis: FinanceKpiRow[];
+  financeCosts: FinanceCostRow[];
+  contracts: ContractRow[];
+  brandKpis: BrandKpiRow[];
+  campaigns: CampaignRow[];
+  marketInsights: MarketInsightRow[];
+  docCoveragePct: number;
+  documents: DocumentRow[];
   refetch: () => void;
   updateVision: (text: string) => void;
   addGoal: () => void;
@@ -81,6 +178,8 @@ interface CompanyData {
   addTask: (employeeId: EmployeeId) => void;
   updateTask: (id: string, text: string) => void;
   removeTask: (employeeId: EmployeeId, id: string) => void;
+  approveDecision: (id: string) => void;
+  holdDecision: (id: string) => void;
 }
 
 const Ctx = createContext<CompanyData | null>(null);
@@ -99,6 +198,19 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   const [tasksByEmployee, setTasksByEmployee] = useState<Partial<Record<EmployeeId, TaskRow[]>>>({});
   const [activeWorkflowsCount, setActiveWorkflowsCount] = useState(0);
   const [pendingDecisionsCount, setPendingDecisionsCount] = useState(0);
+  const [decisions, setDecisions] = useState<DecisionRow[]>([]);
+  const [workflows, setWorkflows] = useState<WorkflowRow[]>([]);
+  const [ideas, setIdeas] = useState<IdeaRow[]>([]);
+  const [financeBudgetExecPct, setFinanceBudgetExecPct] = useState(0);
+  const [financeSuggestion, setFinanceSuggestion] = useState('');
+  const [financeKpis, setFinanceKpis] = useState<FinanceKpiRow[]>([]);
+  const [financeCosts, setFinanceCosts] = useState<FinanceCostRow[]>([]);
+  const [contracts, setContracts] = useState<ContractRow[]>([]);
+  const [brandKpis, setBrandKpis] = useState<BrandKpiRow[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
+  const [marketInsights, setMarketInsights] = useState<MarketInsightRow[]>([]);
+  const [docCoveragePct, setDocCoveragePct] = useState(0);
+  const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [refetchToken, setRefetchToken] = useState(0);
 
   const companyId = profile?.companyId;
@@ -120,6 +232,20 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         tasksRes,
         workflowsCountRes,
         pendingDecisionsCountRes,
+        decisionsRes,
+        decisionMessagesRes,
+        decisionContributorsRes,
+        workflowsRes,
+        ideasRes,
+        financeSummaryRes,
+        financeKpisRes,
+        financeCostsRes,
+        contractsRes,
+        brandKpisRes,
+        campaignsRes,
+        marketInsightsRes,
+        docSummaryRes,
+        documentsRes,
       ] = await Promise.all([
         supabase.from('company_vision').select('text, progress_pct').eq('company_id', companyId!).single(),
         supabase.from('goals').select('id, name, pct, owner_employee_id, position').eq('company_id', companyId!).order('position'),
@@ -130,6 +256,20 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         supabase.from('tasks').select('id, employee_id, text, position').eq('company_id', companyId!).order('position'),
         supabase.from('workflows').select('id', { count: 'exact', head: true }).eq('company_id', companyId!),
         supabase.from('decisions').select('id', { count: 'exact', head: true }).eq('company_id', companyId!).eq('status', 'pending'),
+        supabase.from('decisions').select('id, title, rec, risk, by_employee_id, detail, status').eq('company_id', companyId!).order('created_at'),
+        supabase.from('decision_messages').select('decision_id, employee_id, text, stance, position').order('position'),
+        supabase.from('decision_contributors').select('decision_id, employee_id'),
+        supabase.from('workflows').select('id, name, owner_employee_id, pct, stages, current_stage').eq('company_id', companyId!),
+        supabase.from('ideas').select('id, title, employee_id, tag, heat').eq('company_id', companyId!),
+        supabase.from('finance_summary').select('budget_exec_pct, suggestion').eq('company_id', companyId!).single(),
+        supabase.from('finance_kpis').select('id, label, value, position').eq('company_id', companyId!).order('position'),
+        supabase.from('finance_costs').select('id, dept, pct, color, position').eq('company_id', companyId!).order('position'),
+        supabase.from('contracts').select('id, name, due, note, position').eq('company_id', companyId!).order('position'),
+        supabase.from('brand_kpis').select('id, label, value, delta, position').eq('company_id', companyId!).order('position'),
+        supabase.from('campaigns').select('id, name, status, pct, position').eq('company_id', companyId!).order('position'),
+        supabase.from('market_insights').select('id, employee_id, text, position').eq('company_id', companyId!).order('position'),
+        supabase.from('documentation_summary').select('coverage_pct').eq('company_id', companyId!).single(),
+        supabase.from('documents').select('id, title, cat, employee_id, doc_date, summary').eq('company_id', companyId!).order('created_at', { ascending: false }),
       ]);
 
       if (cancelled) return;
@@ -137,7 +277,12 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       const firstError =
         visionRes.error || goalsRes.error || kpisRes.error || notificationsRes.error ||
         feedRes.error || employeeStateRes.error || tasksRes.error ||
-        workflowsCountRes.error || pendingDecisionsCountRes.error;
+        workflowsCountRes.error || pendingDecisionsCountRes.error ||
+        decisionsRes.error || decisionMessagesRes.error || decisionContributorsRes.error ||
+        workflowsRes.error || ideasRes.error || financeSummaryRes.error ||
+        financeKpisRes.error || financeCostsRes.error || contractsRes.error ||
+        brandKpisRes.error || campaignsRes.error || marketInsightsRes.error ||
+        docSummaryRes.error || documentsRes.error;
       if (firstError) {
         setError(firstError.message);
         setLoading(false);
@@ -203,6 +348,77 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
 
       setActiveWorkflowsCount(workflowsCountRes.count ?? 0);
       setPendingDecisionsCount(pendingDecisionsCountRes.count ?? 0);
+
+      const messagesByDecision = new Map<string, DiscussionMessageRow[]>();
+      for (const m of decisionMessagesRes.data ?? []) {
+        const list = messagesByDecision.get(m.decision_id) ?? [];
+        list.push({ employeeId: m.employee_id as EmployeeId, text: m.text, stance: m.stance });
+        messagesByDecision.set(m.decision_id, list);
+      }
+      const contributorsByDecision = new Map<string, EmployeeId[]>();
+      for (const c of decisionContributorsRes.data ?? []) {
+        const list = contributorsByDecision.get(c.decision_id) ?? [];
+        list.push(c.employee_id as EmployeeId);
+        contributorsByDecision.set(c.decision_id, list);
+      }
+      setDecisions(
+        (decisionsRes.data ?? []).map((d) => ({
+          id: d.id,
+          title: d.title,
+          rec: d.rec,
+          risk: d.risk as '低' | '中' | '高',
+          byEmployeeId: d.by_employee_id as EmployeeId,
+          detail: d.detail,
+          status: d.status as 'pending' | 'approved' | 'hold',
+          discussion: messagesByDecision.get(d.id) ?? [],
+          contributors: contributorsByDecision.get(d.id) ?? [],
+        })),
+      );
+
+      setWorkflows(
+        (workflowsRes.data ?? []).map((w) => ({
+          id: w.id,
+          name: w.name,
+          ownerEmployeeId: w.owner_employee_id as EmployeeId,
+          pct: w.pct,
+          stages: w.stages,
+          currentStage: w.current_stage,
+        })),
+      );
+
+      setIdeas(
+        (ideasRes.data ?? []).map((i) => ({
+          id: i.id,
+          title: i.title,
+          employeeId: i.employee_id as EmployeeId,
+          tag: i.tag,
+          heat: i.heat,
+        })),
+      );
+
+      setFinanceBudgetExecPct(financeSummaryRes.data?.budget_exec_pct ?? 0);
+      setFinanceSuggestion(financeSummaryRes.data?.suggestion ?? '');
+      setFinanceKpis((financeKpisRes.data ?? []).map((k) => ({ id: k.id, label: k.label, value: k.value })));
+      setFinanceCosts((financeCostsRes.data ?? []).map((c) => ({ id: c.id, dept: c.dept, pct: c.pct, color: c.color })));
+      setContracts((contractsRes.data ?? []).map((c) => ({ id: c.id, name: c.name, due: c.due, note: c.note })));
+
+      setBrandKpis((brandKpisRes.data ?? []).map((k) => ({ id: k.id, label: k.label, value: k.value, delta: k.delta })));
+      setCampaigns((campaignsRes.data ?? []).map((c) => ({ id: c.id, name: c.name, status: c.status, pct: c.pct })));
+      setMarketInsights(
+        (marketInsightsRes.data ?? []).map((m) => ({ id: m.id, employeeId: m.employee_id as EmployeeId, text: m.text })),
+      );
+
+      setDocCoveragePct(docSummaryRes.data?.coverage_pct ?? 0);
+      setDocuments(
+        (documentsRes.data ?? []).map((d) => ({
+          id: d.id,
+          title: d.title,
+          cat: d.cat,
+          employeeId: d.employee_id as EmployeeId,
+          date: d.doc_date,
+          summary: d.summary,
+        })),
+      );
 
       setLoading(false);
     }
@@ -324,6 +540,19 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
     void supabase.from('tasks').delete().eq('id', id);
   }, []);
 
+  const decideDecision = useCallback(
+    (id: string, status: 'approved' | 'hold') => {
+      const wasPending = decisions.find((d) => d.id === id)?.status === 'pending';
+      setDecisions((prev) => prev.map((d) => (d.id === id ? { ...d, status } : d)));
+      if (wasPending) setPendingDecisionsCount((count) => Math.max(0, count - 1));
+      void supabase.from('decisions').update({ status, decided_at: new Date().toISOString() }).eq('id', id);
+    },
+    [decisions],
+  );
+
+  const approveDecision = useCallback((id: string) => decideDecision(id, 'approved'), [decideDecision]);
+  const holdDecision = useCallback((id: string) => decideDecision(id, 'hold'), [decideDecision]);
+
   const value = useMemo<CompanyData>(
     () => ({
       loading,
@@ -338,6 +567,19 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       tasksByEmployee,
       activeWorkflowsCount,
       pendingDecisionsCount,
+      decisions,
+      workflows,
+      ideas,
+      financeBudgetExecPct,
+      financeSuggestion,
+      financeKpis,
+      financeCosts,
+      contracts,
+      brandKpis,
+      campaigns,
+      marketInsights,
+      docCoveragePct,
+      documents,
       refetch,
       updateVision,
       addGoal,
@@ -349,12 +591,17 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       addTask,
       updateTask,
       removeTask,
+      approveDecision,
+      holdDecision,
     }),
     [
       loading, error, vision, visionProgressPct, goals, kpis, notifications, feed,
       employeeStates, tasksByEmployee, activeWorkflowsCount, pendingDecisionsCount,
+      decisions, workflows, ideas, financeBudgetExecPct, financeSuggestion, financeKpis,
+      financeCosts, contracts, brandKpis, campaigns, marketInsights, docCoveragePct, documents,
       refetch, updateVision, addGoal, updateGoal,
       removeGoal, addKpi, updateKpi, removeKpi, addTask, updateTask, removeTask,
+      approveDecision, holdDecision,
     ],
   );
 

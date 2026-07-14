@@ -1,18 +1,19 @@
 import { RoomShell } from '../components/RoomShell';
 import { Face } from '../components/Face';
 import { employeeById } from '../data/employees';
-import { WORKFLOWS } from '../data/workflow';
+import { useCompanyData } from '../state/CompanyDataContext';
 import styles from './Workflow.module.css';
 
 /** Workflow Room (オペレーション管制センター) — README §7.7. */
 export function Workflow() {
+  const { workflows } = useCompanyData();
   return (
     <RoomShell roomId="workflow">
       <div className={styles.list}>
-        {WORKFLOWS.map((w) => {
-          const owner = employeeById(w.owner);
+        {workflows.map((w) => {
+          const owner = employeeById(w.ownerEmployeeId);
           return (
-            <div key={w.name} className={styles.card}>
+            <div key={w.id} className={styles.card}>
               <div className={styles.head}>
                 <Face emp={owner} size={40} />
                 <div className={styles.headInfo}>
@@ -25,8 +26,8 @@ export function Workflow() {
               </div>
               <div className={styles.steps}>
                 {w.stages.map((stage, i) => {
-                  const done = i < w.current;
-                  const isCurrent = i === w.current;
+                  const done = i < w.currentStage;
+                  const isCurrent = i === w.currentStage;
                   const notLast = i !== w.stages.length - 1;
                   return (
                     <div key={stage} className={styles.stepWrap}>
@@ -41,7 +42,7 @@ export function Workflow() {
                         <span
                           className={styles.stepLabel}
                           style={{
-                            color: i <= w.current ? 'var(--aicos-brown)' : 'var(--aicos-dim)',
+                            color: i <= w.currentStage ? 'var(--aicos-brown)' : 'var(--aicos-dim)',
                             fontWeight: isCurrent ? 700 : 400,
                           }}
                         >

@@ -2,34 +2,30 @@ import { useState } from 'react';
 import { RoomShell } from '../components/RoomShell';
 import { Face } from '../components/Face';
 import { useApp } from '../state/AppContext';
+import { useCompanyData } from '../state/CompanyDataContext';
 import { employeeById } from '../data/employees';
-import { DECISIONS } from '../data/decisions';
 import styles from './Decision.module.css';
-
-type Status = 'pending' | 'approved' | 'hold';
 
 /** Decision Room (CEO決裁室) — README §7.3/§8, the core "autonomous collaboration" showcase. */
 export function Decision() {
   const { showToast } = useApp();
-  const [status, setStatus] = useState<Record<number, Status>>({});
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const { decisions, approveDecision, holdDecision } = useCompanyData();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const approve = (id: number, title: string) => {
-    setStatus((prev) => ({ ...prev, [id]: 'approved' }));
+  const approve = (id: string, title: string) => {
+    approveDecision(id);
     showToast(`承認しました — ${title}`);
   };
-  const hold = (id: number) => setStatus((prev) => ({ ...prev, [id]: 'hold' }));
-  const toggleThread = (id: number) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleThread = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
     <RoomShell roomId="decision">
       <div className={styles.list}>
-        {DECISIONS.map((d) => {
-          const by = employeeById(d.by);
-          const st = status[d.id] ?? 'pending';
+        {decisions.map((d) => {
+          const by = employeeById(d.byEmployeeId);
           const isOpen = !!expanded[d.id];
           return (
-            <div key={d.id} className={styles.card} style={{ opacity: st === 'pending' ? 1 : 0.72 }}>
+            <div key={d.id} className={styles.card} style={{ opacity: d.status === 'pending' ? 1 : 0.72 }}>
               <div className={styles.row}>
                 <Face emp={by} size={48} />
                 <div className={styles.body}>
@@ -55,7 +51,7 @@ export function Decision() {
                   {isOpen && (
                     <div className={styles.thread}>
                       {d.discussion.map((m, i) => {
-                        const speaker = employeeById(m.by);
+                        const speaker = employeeById(m.employeeId);
                         return (
                           <div key={i} className={styles.msgRow}>
                             <Face emp={speaker} size={26} working={false} />
@@ -83,14 +79,14 @@ export function Decision() {
                   )}
                 </div>
                 <div className={styles.actions}>
-                  {st === 'approved' && <span className={styles.stamp}>✓ 承認しました</span>}
-                  {st === 'hold' && <span className={styles.heldLabel}>保留中</span>}
-                  {st === 'pending' && (
+                  {d.status === 'approved' && <span className={styles.stamp}>✓ 承認しました</span>}
+                  {d.status === 'hold' && <span className={styles.heldLabel}>保留中</span>}
+                  {d.status === 'pending' && (
                     <>
                       <button onClick={() => approve(d.id, d.title)} className={styles.approveBtn}>
                         承認する
                       </button>
-                      <button onClick={() => hold(d.id)} className={styles.holdBtn}>
+                      <button onClick={() => holdDecision(d.id)} className={styles.holdBtn}>
                         保留
                       </button>
                     </>

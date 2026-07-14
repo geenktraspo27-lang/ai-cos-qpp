@@ -1,18 +1,19 @@
 import { RoomShell } from '../components/RoomShell';
 import { Face } from '../components/Face';
+import { useCompanyData } from '../state/CompanyDataContext';
 import { employeeById } from '../data/employees';
-import { IDEAS } from '../data/brain';
 import styles from './Brain.module.css';
 
 /** Brain Room (AIリサーチラボ) — README §7.5. */
 export function Brain() {
+  const { ideas } = useCompanyData();
   return (
     <RoomShell roomId="brain">
       <div className={styles.grid}>
-        {IDEAS.map((idea) => {
-          const by = employeeById(idea.by);
+        {ideas.map((idea) => {
+          const by = employeeById(idea.employeeId);
           return (
-            <div key={idea.title} className={styles.card}>
+            <div key={idea.id} className={styles.card}>
               <div className={styles.head}>
                 <span className={styles.tag}>{idea.tag}</span>
                 <span className={styles.heat}>熱量 {idea.heat}</span>

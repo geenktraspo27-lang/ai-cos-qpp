@@ -3,27 +3,29 @@ import { RoomShell } from '../components/RoomShell';
 import { Ring } from '../components/Ring';
 import { Face } from '../components/Face';
 import { employeeById } from '../data/employees';
-import { DOC_CATS, DOC_COVERAGE_PCT, DOCS } from '../data/docs';
+import { DOC_CATS } from '../data/docs';
+import { useCompanyData } from '../state/CompanyDataContext';
 import styles from './Documentation.module.css';
 
 /** Documentation Room (会社の記憶) — README §7.8. */
 export function Documentation() {
+  const { docCoveragePct, documents } = useCompanyData();
   const [cat, setCat] = useState('すべて');
   const [q, setQ] = useState('');
 
   const hits = useMemo(() => {
     const query = q.toLowerCase();
-    return DOCS.filter(
+    return documents.filter(
       (d) =>
         (cat === 'すべて' || d.cat === cat) &&
         (query === '' || (d.title + d.summary).toLowerCase().includes(query)),
     );
-  }, [cat, q]);
+  }, [documents, cat, q]);
 
   return (
     <RoomShell roomId="docs">
       <div className={styles.searchBar}>
-        <Ring pct={DOC_COVERAGE_PCT} size={96} color="#8A6238" label={`${DOC_COVERAGE_PCT}%`} sub="網羅率" />
+        <Ring pct={docCoveragePct} size={96} color="#8A6238" label={`${docCoveragePct}%`} sub="網羅率" />
         <div className={styles.searchCol}>
           <input
             value={q}
@@ -55,9 +57,9 @@ export function Documentation() {
       ) : (
         <div className={styles.grid}>
           {hits.map((d) => {
-            const by = employeeById(d.by);
+            const by = employeeById(d.employeeId);
             return (
-              <div key={d.title} className={styles.card}>
+              <div key={d.id} className={styles.card}>
                 <div className={styles.cardHead}>
                   <span className={styles.catPill}>{d.cat}</span>
                   <span className={styles.date}>{d.date}</span>
