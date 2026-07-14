@@ -145,6 +145,15 @@ export interface Database {
         'id' | 'created_at'
       >;
 
+      workflow_stage_results: Table<
+        {
+          id: string; company_id: string; workflow_id: string; stage_index: number; stage_name: string;
+          employee_id: string; summary: string; result: string; status: 'generated' | 'approved' | 'rejected';
+          created_at: string; approved_at: string | null;
+        },
+        'id' | 'status' | 'created_at' | 'approved_at'
+      >;
+
       subscriptions: Table<
         {
           company_id: string; stripe_customer_id: string | null; stripe_subscription_id: string | null;

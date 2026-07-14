@@ -6,21 +6,41 @@ import { useApp } from '../state/AppContext';
 import { useCompanyData } from '../state/CompanyDataContext';
 import styles from './Workflow.module.css';
 
-/** Workflow Room (オペレーション管制センター) — README §7.7. 課題2: stage advance + completion. */
+/**
+ * Workflow Room (オペレーション管制センター) — README §7.7.
+ * 課題7: 「次のステージへ進む」は AI社員に実行させる → 実行結果を確認 →
+ * 承認して次へ進む、の3段階に置き換えられた。生成だけではステージは
+ * 進まず、advanceWorkflowStage(=承認)を呼んだときだけ進む。
+ */
 export function Workflow() {
   const { showToast } = useApp();
-  const { workflows, advanceWorkflowStage } = useCompanyData();
-  const [advancing, setAdvancing] = useState<Record<string, boolean>>({});
+  const { workflows, workflowStageResults, executeWorkflowStage, advanceWorkflowStage } = useCompanyData();
+  const [executing, setExecuting] = useState<Record<string, boolean>>({});
+  const [executeErrors, setExecuteErrors] = useState<Record<string, boolean>>({});
+  const [approving, setApproving] = useState<Record<string, boolean>>({});
 
-  const handleAdvance = async (workflowId: string, isFinalAdvance: boolean) => {
-    setAdvancing((prev) => ({ ...prev, [workflowId]: true }));
+  const handleExecute = async (workflowId: string) => {
+    setExecuting((prev) => ({ ...prev, [workflowId]: true }));
+    setExecuteErrors((prev) => ({ ...prev, [workflowId]: false }));
+    try {
+      await executeWorkflowStage(workflowId);
+    } catch {
+      setExecuteErrors((prev) => ({ ...prev, [workflowId]: true }));
+      showToast('実行結果を生成できませんでした');
+    } finally {
+      setExecuting((prev) => ({ ...prev, [workflowId]: false }));
+    }
+  };
+
+  const handleApprove = async (workflowId: string, isFinalAdvance: boolean) => {
+    setApproving((prev) => ({ ...prev, [workflowId]: true }));
     try {
       await advanceWorkflowStage(workflowId);
-      showToast(isFinalAdvance ? 'Workflowが完了しました' : '次のステージに進みました');
+      showToast(isFinalAdvance ? 'Workflowが完了しました' : '承認して次のステージに進みました');
     } catch {
-      showToast('ステージの更新に失敗しました');
+      showToast('承認に失敗しました');
     } finally {
-      setAdvancing((prev) => ({ ...prev, [workflowId]: false }));
+      setApproving((prev) => ({ ...prev, [workflowId]: false }));
     }
   };
 
@@ -31,6 +51,9 @@ export function Workflow() {
           const owner = employeeById(w.ownerEmployeeId);
           const isComplete = w.currentStage >= w.stages.length - 1;
           const isFinalAdvance = w.currentStage === w.stages.length - 2;
+          const currentResult = workflowStageResults.find(
+            (r) => r.workflowId === w.id && r.stageIndex === w.currentStage && r.status === 'generated',
+          );
           return (
             <div key={w.id} className={styles.card}>
               <div className={styles.head}>
@@ -78,19 +101,47 @@ export function Workflow() {
                   );
                 })}
               </div>
-              <div className={styles.advanceRow}>
-                {isComplete ? (
+
+              {isComplete ? (
+                <div className={styles.advanceRow}>
                   <span className={styles.completeLabel}>✓ 完了</span>
-                ) : (
-                  <button
-                    onClick={() => handleAdvance(w.id, isFinalAdvance)}
-                    disabled={!!advancing[w.id]}
-                    className={styles.advanceBtn}
-                  >
-                    {advancing[w.id] ? '更新中…' : '次のステージへ進む'}
+                </div>
+              ) : executing[w.id] ? (
+                <div className={styles.executingBox}>{owner.name}が業務を実行しています…</div>
+              ) : currentResult ? (
+                <div className={styles.resultBox}>
+                  <div className={styles.resultTitle}>実行結果</div>
+                  <div className={styles.resultLabel}>要約</div>
+                  <p className={styles.resultSummary}>{currentResult.summary}</p>
+                  <div className={styles.resultLabel}>結果</div>
+                  <p className={styles.resultText}>{currentResult.result}</p>
+                  <div className={styles.resultActions}>
+                    <button
+                      onClick={() => handleApprove(w.id, isFinalAdvance)}
+                      disabled={!!approving[w.id]}
+                      className={styles.approveBtn}
+                    >
+                      {approving[w.id] ? '承認中…' : '承認して次へ進む'}
+                    </button>
+                    <button
+                      onClick={() => handleExecute(w.id)}
+                      disabled={!!approving[w.id]}
+                      className={styles.regenerateBtn}
+                    >
+                      再生成
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.advanceRow}>
+                  {executeErrors[w.id] && (
+                    <p className={styles.executeError}>実行結果を生成できませんでした。再度お試しください。</p>
+                  )}
+                  <button onClick={() => handleExecute(w.id)} className={styles.advanceBtn}>
+                    AI社員に実行させる
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           );
         })}

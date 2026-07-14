@@ -86,6 +86,20 @@ export interface WorkflowRow {
   sourceGoalId: string | null;
 }
 
+/** 課題7: one AI-generated (then founder-approved) result per Workflow stage. */
+export interface WorkflowStageResultRow {
+  id: string;
+  workflowId: string;
+  stageIndex: number;
+  stageName: string;
+  employeeId: EmployeeId;
+  summary: string;
+  result: string;
+  status: 'generated' | 'approved' | 'rejected';
+  createdAt: string;
+  approvedAt: string | null;
+}
+
 /** 課題1: standard stage template used when a workflow is created from a Goal (no LLM generation yet). */
 const DEFAULT_WORKFLOW_STAGES = ['計画', '実行', 'レビュー', '完了'];
 
@@ -185,6 +199,7 @@ interface CompanyData {
   marketInsights: MarketInsightRow[];
   docCoveragePct: number;
   documents: DocumentRow[];
+  workflowStageResults: WorkflowStageResultRow[];
   refetch: () => void;
   updateVision: (text: string) => void;
   addGoal: () => void;
@@ -200,6 +215,7 @@ interface CompanyData {
   holdDecision: (id: string) => void;
   createWorkflowFromGoal: (goalId: string) => Promise<void>;
   advanceWorkflowStage: (workflowId: string) => Promise<void>;
+  executeWorkflowStage: (workflowId: string) => Promise<void>;
 }
 
 const Ctx = createContext<CompanyData | null>(null);
@@ -231,6 +247,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   const [marketInsights, setMarketInsights] = useState<MarketInsightRow[]>([]);
   const [docCoveragePct, setDocCoveragePct] = useState(0);
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
+  const [workflowStageResults, setWorkflowStageResults] = useState<WorkflowStageResultRow[]>([]);
   const [refetchToken, setRefetchToken] = useState(0);
 
   const companyId = profile?.companyId;
@@ -266,6 +283,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         marketInsightsRes,
         docSummaryRes,
         documentsRes,
+        workflowStageResultsRes,
       ] = await Promise.all([
         supabase.from('company_vision').select('text, progress_pct').eq('company_id', companyId!).single(),
         supabase.from('goals').select('id, name, pct, owner_employee_id, position').eq('company_id', companyId!).order('position'),
@@ -290,6 +308,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         supabase.from('market_insights').select('id, employee_id, text, position').eq('company_id', companyId!).order('position'),
         supabase.from('documentation_summary').select('coverage_pct').eq('company_id', companyId!).single(),
         supabase.from('documents').select('id, title, cat, employee_id, doc_date, summary, content, source_workflow_id').eq('company_id', companyId!).order('created_at', { ascending: false }),
+        supabase.from('workflow_stage_results').select('id, workflow_id, stage_index, stage_name, employee_id, summary, result, status, created_at, approved_at').eq('company_id', companyId!),
       ]);
 
       if (cancelled) return;
@@ -302,7 +321,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         workflowsRes.error || ideasRes.error || financeSummaryRes.error ||
         financeKpisRes.error || financeCostsRes.error || contractsRes.error ||
         brandKpisRes.error || campaignsRes.error || marketInsightsRes.error ||
-        docSummaryRes.error || documentsRes.error;
+        docSummaryRes.error || documentsRes.error || workflowStageResultsRes.error;
       if (firstError) {
         setError(firstError.message);
         setLoading(false);
@@ -442,6 +461,21 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
           summary: d.summary,
           content: d.content ?? '',
           sourceWorkflowId: d.source_workflow_id,
+        })),
+      );
+
+      setWorkflowStageResults(
+        (workflowStageResultsRes.data ?? []).map((r) => ({
+          id: r.id,
+          workflowId: r.workflow_id,
+          stageIndex: r.stage_index,
+          stageName: r.stage_name,
+          employeeId: r.employee_id as EmployeeId,
+          summary: r.summary,
+          result: r.result,
+          status: r.status,
+          createdAt: r.created_at,
+          approvedAt: r.approved_at,
         })),
       );
 
@@ -728,10 +762,19 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   );
 
   /**
-   * 課題2/3: advance a workflow by exactly one stage. The `.eq('current_stage', ...)`
-   * guard makes the update a no-op (0 rows) if the stage already moved since
-   * we read it — belt-and-braces against double-clicks/races on top of the
-   * UI-level disabled state, so a workflow can never skip a stage.
+   * 課題2/3/7: advance a workflow by exactly one stage — now the "承認して
+   * 次へ進む" action. This is the ONLY path that moves a Workflow's stage,
+   * so gating it on an approval here is what keeps "AI generated a result"
+   * and "the company officially progressed" distinct: it first tries to
+   * flip that stage's workflow_stage_results row from 'generated' to
+   * 'approved' (guarded so a race or a stage with no generated result yet
+   * is a safe no-op), and only proceeds to the existing stage-advance logic
+   * if that approval actually happened.
+   *
+   * The `.eq('current_stage', ...)` guard below makes the workflow update a
+   * no-op (0 rows) if the stage already moved since we read it — belt-and-
+   * braces against double-clicks/races on top of the UI-level disabled
+   * state, so a workflow can never skip a stage.
    *
    * The final advance (reaching the last stage) is instead delegated to the
    * complete_workflow RPC, which applies the completion side-effects and
@@ -746,6 +789,25 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       if (!wf) return;
       const lastIndex = wf.stages.length - 1;
       if (wf.currentStage >= lastIndex) return;
+
+      const { data: approvedRow, error: approveError } = await supabase
+        .from('workflow_stage_results')
+        .update({ status: 'approved', approved_at: new Date().toISOString() })
+        .eq('workflow_id', workflowId)
+        .eq('stage_index', wf.currentStage)
+        .eq('status', 'generated')
+        .select('id')
+        .single();
+      if (approveError || !approvedRow) {
+        // No generated result to approve for this stage (or it was already
+        // approved/rejected) — nothing to advance.
+        return;
+      }
+      setWorkflowStageResults((prev) =>
+        prev.map((r) =>
+          r.id === approvedRow.id ? { ...r, status: 'approved', approvedAt: new Date().toISOString() } : r,
+        ),
+      );
 
       const nextStage = wf.currentStage + 1;
       const isComplete = nextStage === lastIndex;
@@ -802,6 +864,34 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
     [companyId, workflows, refetch],
   );
 
+  /**
+   * 課題7: has the current stage's assigned AI employee "execute" it via
+   * /api/execute-workflow-stage, which derives the Workflow/Goal/Vision/
+   * employee/prior-results context itself (RLS-scoped to this company) and
+   * saves the result server-side — this call only sends workflowId. There
+   * is deliberately no fallback here: on any failure we just refetch()
+   * nothing and rethrow, so the caller (Workflow Room) can show the fixed
+   * "実行結果を生成できませんでした" message without the stage having moved
+   * or a placeholder result having been saved.
+   */
+  const executeWorkflowStage = useCallback(async (workflowId: string) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const res = await fetch('/api/execute-workflow-stage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ workflowId }),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to execute workflow stage');
+    }
+    refetch();
+  }, [refetch]);
+
   const value = useMemo<CompanyData>(
     () => ({
       loading,
@@ -829,6 +919,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       marketInsights,
       docCoveragePct,
       documents,
+      workflowStageResults,
       refetch,
       updateVision,
       addGoal,
@@ -844,15 +935,16 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       holdDecision,
       createWorkflowFromGoal,
       advanceWorkflowStage,
+      executeWorkflowStage,
     }),
     [
       loading, error, vision, visionProgressPct, goals, kpis, notifications, feed,
       employeeStates, tasksByEmployee, activeWorkflowsCount, pendingDecisionsCount,
       decisions, workflows, ideas, financeBudgetExecPct, financeSuggestion, financeKpis,
       financeCosts, contracts, brandKpis, campaigns, marketInsights, docCoveragePct, documents,
-      refetch, updateVision, addGoal, updateGoal,
+      workflowStageResults, refetch, updateVision, addGoal, updateGoal,
       removeGoal, addKpi, updateKpi, removeKpi, addTask, updateTask, removeTask,
-      approveDecision, holdDecision, createWorkflowFromGoal, advanceWorkflowStage,
+      approveDecision, holdDecision, createWorkflowFromGoal, advanceWorkflowStage, executeWorkflowStage,
     ],
   );
 

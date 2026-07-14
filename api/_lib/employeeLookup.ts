@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createUserScopedSupabaseClient } from './supabaseServer.ts';
 
 export interface CanonicalEmployee {
   id: string;
@@ -21,16 +21,9 @@ export async function lookupCompanyEmployee(
   accessToken: string,
   employeeId: string,
 ): Promise<CanonicalEmployee | null> {
-  if (!accessToken || !employeeId) return null;
-
-  const url = process.env.VITE_SUPABASE_URL;
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) return null;
-
-  const supabase = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  if (!employeeId) return null;
+  const supabase = createUserScopedSupabaseClient(accessToken);
+  if (!supabase) return null;
 
   try {
     const { data: stateRow } = await supabase
