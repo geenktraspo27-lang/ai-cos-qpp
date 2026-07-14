@@ -43,17 +43,41 @@ export interface ExecuteWorkflowStageResult {
   result: string;
 }
 
+export interface ChatWithEmployeeInput {
+  /** Always the caller-verified canonical record — never client-trusted fields. */
+  employee: {
+    name: string;
+    roleJp: string;
+    persona: string;
+  };
+  companyVision: string;
+  /** Strategic Goal titles, already capped server-side (max 10). */
+  goals: string[];
+  /** In-progress Workflow summaries, already capped server-side (max 10). */
+  workflows: string[];
+  /** Recent Brain Knowledge entries, already capped server-side (max 10). */
+  knowledge: string[];
+  /** Already capped server-side (直近10往復 = up to 20 entries), oldest first. */
+  conversationHistory: { role: 'user' | 'assistant'; content: string }[];
+  message: string;
+}
+
+export interface ChatWithEmployeeResult {
+  reply: string;
+}
+
 export interface LLMService {
   generateWorkflow(input: GenerateWorkflowInput): Promise<GenerateWorkflowResult>;
   executeWorkflowStage(input: ExecuteWorkflowStageInput): Promise<ExecuteWorkflowStageResult>;
   generateDocument(input: unknown): Promise<unknown>;
   summarizeKnowledge(input: unknown): Promise<unknown>;
-  chatWithEmployee(input: unknown): Promise<unknown>;
+  chatWithEmployee(input: ChatWithEmployeeInput): Promise<ChatWithEmployeeResult>;
 }
 
 const MODEL = 'claude-opus-4-8';
 const WORKFLOW_TIMEOUT_MS = 20_000;
 const STAGE_TIMEOUT_MS = 30_000;
+const CHAT_TIMEOUT_MS = 25_000;
 const MIN_STAGES = 4;
 const MAX_STAGES = 8;
 
@@ -182,6 +206,62 @@ function parseStageResult(raw: string): ExecuteWorkflowStageResult {
   return { summary: summary.trim(), result: result.trim() };
 }
 
+/**
+ * 課題10: the assigned employee answers the founder's question using only
+ * the company context the server derived (Vision/Goals/Workflows/Brain
+ * Knowledge) — never information the LLM invents. Explicitly told it cannot
+ * create/modify Workflows or change any data, since this endpoint is
+ * chat-only (no side effects beyond saving the conversation).
+ */
+function buildChatSystemPrompt({ employee, companyVision, goals, workflows, knowledge }: ChatWithEmployeeInput): string {
+  const goalsBlock = goals.length > 0 ? goals.map((g, i) => `${i + 1}. ${g}`).join('\n') : '(なし)';
+  const workflowsBlock = workflows.length > 0 ? workflows.map((w, i) => `${i + 1}. ${w}`).join('\n') : '(なし)';
+  const knowledgeBlock = knowledge.length > 0 ? knowledge.map((k, i) => `${i + 1}. ${k}`).join('\n') : '(なし)';
+
+  return `あなたはAI-COSの${employee.roleJp}、${employee.name}です。
+
+会社のfounder（ユーザー）からの質問や相談に、あなたの役割・専門性を
+活かして答えてください。以下は会社の実際の情報です。
+
+会社のVision
+${companyVision || '(未設定)'}
+
+Strategic Goals（最大10件）
+${goalsBlock}
+
+進行中のWorkflow（最大10件）
+${workflowsBlock}
+
+Brainに保存された知識（直近10件）
+${knowledgeBlock}
+
+あなたの役割・専門分野
+役割：${employee.roleJp}
+専門分野：${employee.persona}
+
+条件
+
+・上記の会社情報を踏まえて、あなたの立場から具体的に回答してください
+・情報が不足していて分からないことは、正直に「分かりません」と答えてください
+・あなたはWorkflowの作成・変更やデータベースの変更は行えません。会話のみ行ってください
+・日本語
+・JSONのみ`;
+}
+
+function parseChatResult(raw: string): ChatWithEmployeeResult {
+  const parsed: unknown = JSON.parse(raw);
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('LLM response is not a JSON object');
+  }
+  const { reply } = parsed as Record<string, unknown>;
+
+  if (typeof reply !== 'string' || reply.trim() === '') {
+    throw new Error('LLM response missing reply');
+  }
+
+  return { reply: reply.trim() };
+}
+
 function extractText(response: Anthropic.Message): string {
   if (response.stop_reason === 'refusal') {
     throw new Error('LLM refused the request');
@@ -262,7 +342,33 @@ export class AnthropicLLMService implements LLMService {
     return Promise.reject(new Error('summarizeKnowledge is not implemented yet'));
   }
 
-  chatWithEmployee(): Promise<unknown> {
-    return Promise.reject(new Error('chatWithEmployee is not implemented yet'));
+  async chatWithEmployee(input: ChatWithEmployeeInput): Promise<ChatWithEmployeeResult> {
+    const response = await this.client.messages.create(
+      {
+        model: MODEL,
+        max_tokens: 2048,
+        system: buildChatSystemPrompt(input),
+        output_config: {
+          format: {
+            type: 'json_schema',
+            schema: {
+              type: 'object',
+              properties: {
+                reply: { type: 'string' },
+              },
+              required: ['reply'],
+              additionalProperties: false,
+            },
+          },
+        },
+        messages: [
+          ...input.conversationHistory.map((m) => ({ role: m.role, content: m.content }) as const),
+          { role: 'user' as const, content: input.message },
+        ],
+      },
+      { timeout: CHAT_TIMEOUT_MS },
+    );
+
+    return parseChatResult(extractText(response));
   }
 }

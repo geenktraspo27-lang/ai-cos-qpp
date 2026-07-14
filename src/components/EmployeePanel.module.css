@@ -327,3 +327,16 @@
   font-size: 15px;
   flex-shrink: 0;
 }
+
+.sendBtn:disabled,
+.chatInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chatErrorText {
+  font-size: 10.5px;
+  color: var(--aicos-danger);
+  line-height: 1.5;
+  justify-self: start;
+}

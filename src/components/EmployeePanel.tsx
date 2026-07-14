@@ -1,32 +1,36 @@
-import { useState, type KeyboardEvent } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 import { useApp } from '../state/AppContext';
 import { useCompanyData } from '../state/CompanyDataContext';
 import { EMPLOYEES, employeeById } from '../data/employees';
 import { Face } from './Face';
 import styles from './EmployeePanel.module.css';
 
-interface ChatMessage {
-  me: boolean;
-  text: string;
-}
-
 interface EmployeePanelProps {
   variant?: 'desktop' | 'drawer';
   onClose?: () => void;
 }
 
+const CHAT_ERROR_TEXT = '回答を生成できませんでした。再度お試しください。';
+
 /** Right-hand AI Employee Panel: selector row, portrait card, tasks, chat. */
 export function EmployeePanel({ variant = 'desktop', onClose }: EmployeePanelProps) {
   const { eId, selectEmployee, showToast } = useApp();
-  const { employeeStates, tasksByEmployee, updateTask, addTask, removeTask } = useCompanyData();
+  const { employeeStates, tasksByEmployee, updateTask, addTask, removeTask, chatMessagesByEmployee, sendChatMessage } =
+    useCompanyData();
   const [editTasks, setEditTasks] = useState(false);
-  const [chat, setChat] = useState<Partial<Record<string, ChatMessage[]>>>({});
   const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   const emp = employeeById(eId);
   const state = employeeStates[eId];
   const tasks = tasksByEmployee[eId] ?? [];
-  const chatLog = chat[eId] ?? [];
+  const chatLog = chatMessagesByEmployee[eId] ?? [];
+
+  useEffect(() => {
+    setDraft('');
+    setChatError(null);
+  }, [eId]);
 
   const toggleEditTasks = () => {
     setEditTasks((v) => {
@@ -35,19 +39,23 @@ export function EmployeePanel({ variant = 'desktop', onClose }: EmployeePanelPro
     });
   };
 
-  const send = () => {
+  const send = async () => {
     const text = draft.trim();
-    if (!text) return;
-    const reply = `かしこまりました!「${text.slice(0, 22)}${text.length > 22 ? '…' : ''}」を承りました。優先度を確認して進めますね。`;
-    setChat((prev) => ({
-      ...prev,
-      [eId]: [...(prev[eId] ?? []), { me: true, text }, { me: false, text: reply }],
-    }));
-    setDraft('');
+    if (!text || sending) return;
+    setSending(true);
+    setChatError(null);
+    try {
+      await sendChatMessage(eId, text);
+      setDraft('');
+    } catch {
+      setChatError(CHAT_ERROR_TEXT);
+    } finally {
+      setSending(false);
+    }
   };
 
   const onDraftKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') send();
+    if (e.key === 'Enter') void send();
   };
 
   return (
@@ -141,13 +149,15 @@ export function EmployeePanel({ variant = 'desktop', onClose }: EmployeePanelPro
       </div>
 
       <div className={styles.chatArea}>
-        {chatLog.length > 0 && (
+        {(chatLog.length > 0 || sending || chatError) && (
           <div className={styles.chatLog}>
-            {chatLog.map((m, i) => (
-              <div key={i} className={m.me ? styles.bubbleMe : styles.bubbleAi}>
-                {m.text}
+            {chatLog.map((m) => (
+              <div key={m.id} className={m.role === 'user' ? styles.bubbleMe : styles.bubbleAi}>
+                {m.content}
               </div>
             ))}
+            {sending && <div className={styles.bubbleAi}>{emp.name}が考えています…</div>}
+            {chatError && <div className={styles.chatErrorText}>{chatError}</div>}
           </div>
         )}
         <div className={styles.chatInputRow}>
@@ -157,12 +167,14 @@ export function EmployeePanel({ variant = 'desktop', onClose }: EmployeePanelPro
             onKeyDown={onDraftKey}
             placeholder={`${emp.name} に話しかける…`}
             className={styles.chatInput}
+            disabled={sending}
           />
           <button
-            onClick={send}
+            onClick={() => void send()}
             aria-label="送信"
             className={styles.sendBtn}
             style={{ background: emp.color }}
+            disabled={sending || draft.trim() === ''}
           >
             ↑
           </button>

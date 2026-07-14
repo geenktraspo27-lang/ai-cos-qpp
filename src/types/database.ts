@@ -154,6 +154,14 @@ export interface Database {
         'id' | 'status' | 'created_at' | 'approved_at'
       >;
 
+      employee_chat_messages: Table<
+        {
+          id: string; company_id: string; employee_id: string; user_id: string;
+          role: 'user' | 'assistant'; content: string; created_at: string;
+        },
+        'id' | 'company_id' | 'user_id' | 'created_at'
+      >;
+
       subscriptions: Table<
         {
           company_id: string; stripe_customer_id: string | null; stripe_subscription_id: string | null;

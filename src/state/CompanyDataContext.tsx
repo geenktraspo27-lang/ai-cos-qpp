@@ -100,6 +100,14 @@ export interface WorkflowStageResultRow {
   approvedAt: string | null;
 }
 
+/** 課題10: one message (either side) in a founder⇄AI employee chat thread. */
+export interface ChatMessageRow {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+}
+
 /** 課題1: standard stage template used when a workflow is created from a Goal (no LLM generation yet). */
 const DEFAULT_WORKFLOW_STAGES = ['計画', '実行', 'レビュー', '完了'];
 
@@ -176,6 +184,7 @@ interface CompanyData {
   feed: FeedRow[];
   employeeStates: Partial<Record<EmployeeId, EmployeeState>>;
   tasksByEmployee: Partial<Record<EmployeeId, TaskRow[]>>;
+  chatMessagesByEmployee: Partial<Record<EmployeeId, ChatMessageRow[]>>;
   activeWorkflowsCount: number;
   pendingDecisionsCount: number;
   decisions: DecisionRow[];
@@ -208,6 +217,7 @@ interface CompanyData {
   createWorkflowFromGoal: (goalId: string) => Promise<void>;
   advanceWorkflowStage: (workflowId: string) => Promise<void>;
   executeWorkflowStage: (workflowId: string) => Promise<void>;
+  sendChatMessage: (employeeId: EmployeeId, message: string) => Promise<void>;
 }
 
 const Ctx = createContext<CompanyData | null>(null);
@@ -224,6 +234,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   const [feed, setFeed] = useState<FeedRow[]>([]);
   const [employeeStates, setEmployeeStates] = useState<Partial<Record<EmployeeId, EmployeeState>>>({});
   const [tasksByEmployee, setTasksByEmployee] = useState<Partial<Record<EmployeeId, TaskRow[]>>>({});
+  const [chatMessagesByEmployee, setChatMessagesByEmployee] = useState<Partial<Record<EmployeeId, ChatMessageRow[]>>>({});
   const [activeWorkflowsCount, setActiveWorkflowsCount] = useState(0);
   const [pendingDecisionsCount, setPendingDecisionsCount] = useState(0);
   const [decisions, setDecisions] = useState<DecisionRow[]>([]);
@@ -276,6 +287,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         docSummaryRes,
         documentsRes,
         workflowStageResultsRes,
+        chatMessagesRes,
       ] = await Promise.all([
         supabase.from('company_vision').select('text, progress_pct').eq('company_id', companyId!).single(),
         supabase.from('goals').select('id, name, pct, owner_employee_id, position').eq('company_id', companyId!).order('position'),
@@ -304,6 +316,11 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         supabase.from('documentation_summary').select('coverage_pct').eq('company_id', companyId!).single(),
         supabase.from('documents').select('id, title, cat, employee_id, doc_date, summary, content, source_workflow_id').eq('company_id', companyId!).order('created_at', { ascending: false }),
         supabase.from('workflow_stage_results').select('id, workflow_id, stage_index, stage_name, employee_id, summary, result, status, created_at, approved_at').eq('company_id', companyId!),
+        supabase
+          .from('employee_chat_messages')
+          .select('id, employee_id, role, content, created_at')
+          .eq('company_id', companyId!)
+          .order('created_at', { ascending: true }),
       ]);
 
       if (cancelled) return;
@@ -316,7 +333,8 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         workflowsRes.error || ideasRes.error || financeSummaryRes.error ||
         financeKpisRes.error || financeCostsRes.error || contractsRes.error ||
         brandKpisRes.error || campaignsRes.error || marketInsightsRes.error ||
-        docSummaryRes.error || documentsRes.error || workflowStageResultsRes.error;
+        docSummaryRes.error || documentsRes.error || workflowStageResultsRes.error ||
+        chatMessagesRes.error;
       if (firstError) {
         setError(firstError.message);
         setLoading(false);
@@ -474,6 +492,13 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
           approvedAt: r.approved_at,
         })),
       );
+
+      const chatMap: Partial<Record<EmployeeId, ChatMessageRow[]>> = {};
+      for (const row of chatMessagesRes.data ?? []) {
+        const id = row.employee_id as EmployeeId;
+        (chatMap[id] ??= []).push({ id: row.id, role: row.role as 'user' | 'assistant', content: row.content, createdAt: row.created_at });
+      }
+      setChatMessagesByEmployee(chatMap);
 
       setLoading(false);
     }
@@ -818,6 +843,30 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
     refetch();
   }, [refetch]);
 
+  const sendChatMessage = useCallback(
+    async (employeeId: EmployeeId, message: string) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch('/api/chat-with-employee', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ employeeId, message }),
+      });
+      // Refetch even on failure: the founder's own message may already be
+      // saved server-side (it's written before the LLM call), so reloading
+      // surfaces it either way instead of leaving the UI stale.
+      refetch();
+      if (!res.ok) {
+        throw new Error('Failed to send chat message');
+      }
+    },
+    [refetch],
+  );
+
   const value = useMemo<CompanyData>(
     () => ({
       loading,
@@ -830,6 +879,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       feed,
       employeeStates,
       tasksByEmployee,
+      chatMessagesByEmployee,
       activeWorkflowsCount,
       pendingDecisionsCount,
       decisions,
@@ -862,15 +912,17 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       createWorkflowFromGoal,
       advanceWorkflowStage,
       executeWorkflowStage,
+      sendChatMessage,
     }),
     [
       loading, error, vision, visionProgressPct, goals, kpis, notifications, feed,
-      employeeStates, tasksByEmployee, activeWorkflowsCount, pendingDecisionsCount,
+      employeeStates, tasksByEmployee, chatMessagesByEmployee, activeWorkflowsCount, pendingDecisionsCount,
       decisions, workflows, ideas, financeBudgetExecPct, financeSuggestion, financeKpis,
       financeCosts, contracts, brandKpis, campaigns, marketInsights, docCoveragePct, documents,
       workflowStageResults, refetch, updateVision, addGoal, updateGoal,
       removeGoal, addKpi, updateKpi, removeKpi, addTask, updateTask, removeTask,
       approveDecision, holdDecision, createWorkflowFromGoal, advanceWorkflowStage, executeWorkflowStage,
+      sendChatMessage,
     ],
   );
 
