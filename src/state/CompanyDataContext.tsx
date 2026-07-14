@@ -153,6 +153,7 @@ export interface DocumentRow {
   employeeId: EmployeeId;
   date: string;
   summary: string;
+  sourceWorkflowId: string | null;
 }
 
 interface CompanyData {
@@ -285,7 +286,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         supabase.from('campaigns').select('id, name, status, pct, position').eq('company_id', companyId!).order('position'),
         supabase.from('market_insights').select('id, employee_id, text, position').eq('company_id', companyId!).order('position'),
         supabase.from('documentation_summary').select('coverage_pct').eq('company_id', companyId!).single(),
-        supabase.from('documents').select('id, title, cat, employee_id, doc_date, summary').eq('company_id', companyId!).order('created_at', { ascending: false }),
+        supabase.from('documents').select('id, title, cat, employee_id, doc_date, summary, source_workflow_id').eq('company_id', companyId!).order('created_at', { ascending: false }),
       ]);
 
       if (cancelled) return;
@@ -434,6 +435,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
           employeeId: d.employee_id as EmployeeId,
           date: d.doc_date,
           summary: d.summary,
+          sourceWorkflowId: d.source_workflow_id,
         })),
       );
 
@@ -654,10 +656,16 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   );
 
   /**
-   * 課題2: advance a workflow by exactly one stage. The `.eq('current_stage', ...)`
+   * 課題2/3: advance a workflow by exactly one stage. The `.eq('current_stage', ...)`
    * guard makes the update a no-op (0 rows) if the stage already moved since
    * we read it — belt-and-braces against double-clicks/races on top of the
    * UI-level disabled state, so a workflow can never skip a stage.
+   *
+   * The final advance (reaching the last stage) is instead delegated to the
+   * complete_workflow RPC, which applies the completion side-effects and
+   * generates the Documentation completion report atomically in one
+   * transaction — doing that as separate client-side calls could leave a
+   * completed Workflow without its report (or vice versa) if one call failed.
    */
   const advanceWorkflowStage = useCallback(
     async (workflowId: string) => {
@@ -669,6 +677,14 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
 
       const nextStage = wf.currentStage + 1;
       const isComplete = nextStage === lastIndex;
+
+      if (isComplete) {
+        const { error } = await supabase.rpc('complete_workflow', { p_workflow_id: workflowId });
+        if (error) throw error;
+        refetch();
+        return;
+      }
+
       const nextPct = stagePercentFor(nextStage, wf.stages.length);
 
       const { data: updated, error: updateError } = await supabase
@@ -697,9 +713,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
 
       const owner = employeeById(wf.ownerEmployeeId);
       const stageLabel = wf.stages[nextStage];
-      const feedText = isComplete
-        ? `${owner.name}が「${wf.name}」を完了しました`
-        : `${owner.name}が「${wf.name}」を${stageLabel}に進めました`;
+      const feedText = `${owner.name}が「${wf.name}」を${stageLabel}に進めました`;
 
       const { data: feedRow } = await supabase
         .from('activity_feed')
@@ -712,35 +726,8 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
           ...prev,
         ]);
       }
-
-      if (isComplete) {
-        const { data: notifRow } = await supabase
-          .from('notifications')
-          .insert({
-            company_id: companyId,
-            employee_id: wf.ownerEmployeeId,
-            text: `Workflow「${wf.name}」が完了しました`,
-            room: 'workflow',
-            unread: true,
-          })
-          .select('id, employee_id, text, room, unread, created_at')
-          .single();
-        if (notifRow) {
-          setNotifications((prev) => [
-            {
-              id: notifRow.id,
-              employeeId: notifRow.employee_id as EmployeeId,
-              text: notifRow.text,
-              room: notifRow.room as RoomId,
-              unread: notifRow.unread,
-              createdAt: notifRow.created_at,
-            },
-            ...prev,
-          ]);
-        }
-      }
     },
-    [companyId, workflows],
+    [companyId, workflows, refetch],
   );
 
   const value = useMemo<CompanyData>(

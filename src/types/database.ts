@@ -125,8 +125,11 @@ export interface Database {
       documentation_summary: Table<{ company_id: string; coverage_pct: number }, 'coverage_pct'>;
 
       documents: Table<
-        { id: string; company_id: string; title: string; cat: string; employee_id: string; doc_date: string; summary: string; created_at: string },
-        'id' | 'created_at'
+        {
+          id: string; company_id: string; title: string; cat: string; employee_id: string; doc_date: string;
+          summary: string; created_at: string; source_workflow_id: string | null;
+        },
+        'id' | 'created_at' | 'source_workflow_id'
       >;
 
       notifications: Table<
@@ -148,6 +151,11 @@ export interface Database {
       >;
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      complete_workflow: {
+        Args: { p_workflow_id: string };
+        Returns: { workflow_id: string; current_stage: number; pct: number; document_id: string };
+      };
+    };
   };
 }
