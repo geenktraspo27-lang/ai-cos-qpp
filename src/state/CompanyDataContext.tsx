@@ -155,6 +155,7 @@ export interface DocumentRow {
   employeeId: EmployeeId;
   date: string;
   summary: string;
+  content: string;
   sourceWorkflowId: string | null;
 }
 
@@ -288,7 +289,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         supabase.from('campaigns').select('id, name, status, pct, position').eq('company_id', companyId!).order('position'),
         supabase.from('market_insights').select('id, employee_id, text, position').eq('company_id', companyId!).order('position'),
         supabase.from('documentation_summary').select('coverage_pct').eq('company_id', companyId!).single(),
-        supabase.from('documents').select('id, title, cat, employee_id, doc_date, summary, source_workflow_id').eq('company_id', companyId!).order('created_at', { ascending: false }),
+        supabase.from('documents').select('id, title, cat, employee_id, doc_date, summary, content, source_workflow_id').eq('company_id', companyId!).order('created_at', { ascending: false }),
       ]);
 
       if (cancelled) return;
@@ -439,6 +440,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
           employeeId: d.employee_id as EmployeeId,
           date: d.doc_date,
           summary: d.summary,
+          content: d.content ?? '',
           sourceWorkflowId: d.source_workflow_id,
         })),
       );

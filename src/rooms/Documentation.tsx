@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RoomShell } from '../components/RoomShell';
 import { Ring } from '../components/Ring';
 import { Face } from '../components/Face';
 import { employeeById } from '../data/employees';
 import { DOC_CATS } from '../data/docs';
-import { useCompanyData } from '../state/CompanyDataContext';
+import { useCompanyData, type DocumentRow } from '../state/CompanyDataContext';
 import styles from './Documentation.module.css';
 
 /** Documentation Room (会社の記憶) — README §7.8. */
@@ -12,6 +12,16 @@ export function Documentation() {
   const { docCoveragePct, documents } = useCompanyData();
   const [cat, setCat] = useState('すべて');
   const [q, setQ] = useState('');
+  const [selectedDocument, setSelectedDocument] = useState<DocumentRow | null>(null);
+
+  useEffect(() => {
+    if (!selectedDocument) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedDocument(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedDocument]);
 
   const hits = useMemo(() => {
     const query = q.toLowerCase();
@@ -59,7 +69,19 @@ export function Documentation() {
           {hits.map((d) => {
             const by = employeeById(d.employeeId);
             return (
-              <div key={d.id} className={styles.card}>
+              <div
+                key={d.id}
+                className={styles.card}
+                onClick={() => setSelectedDocument(d)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedDocument(d);
+                  }
+                }}
+              >
                 <div className={styles.cardHead}>
                   <span className={styles.catPill}>{d.cat}</span>
                   <span className={styles.date}>{d.date}</span>
@@ -73,6 +95,38 @@ export function Documentation() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {selectedDocument && (
+        <div className={styles.modalBackdrop} onClick={() => setSelectedDocument(null)}>
+          <article className={styles.detailModal} onClick={(e) => e.stopPropagation()}>
+            <button
+              className={styles.closeButton}
+              onClick={() => setSelectedDocument(null)}
+              aria-label="閉じる"
+            >
+              ×
+            </button>
+
+            <div className={styles.detailHeader}>
+              <span className={styles.catPill}>{selectedDocument.cat}</span>
+              <span className={styles.date}>{selectedDocument.date}</span>
+            </div>
+
+            <h2 className={styles.detailTitle}>{selectedDocument.title}</h2>
+
+            <p className={styles.detailSummary}>{selectedDocument.summary}</p>
+
+            <div className={styles.detailContent}>
+              {selectedDocument.content || 'このドキュメントには詳細本文がありません。'}
+            </div>
+
+            <div className={styles.byRow}>
+              <Face emp={employeeById(selectedDocument.employeeId)} size={22} working={false} />
+              <span className={styles.byText}>{employeeById(selectedDocument.employeeId).name} が作成</span>
+            </div>
+          </article>
         </div>
       )}
     </RoomShell>

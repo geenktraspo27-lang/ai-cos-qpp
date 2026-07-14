@@ -130,9 +130,9 @@ export interface Database {
       documents: Table<
         {
           id: string; company_id: string; title: string; cat: string; employee_id: string; doc_date: string;
-          summary: string; created_at: string; source_workflow_id: string | null;
+          summary: string; created_at: string; source_workflow_id: string | null; content: string | null;
         },
-        'id' | 'created_at' | 'source_workflow_id'
+        'id' | 'created_at' | 'source_workflow_id' | 'content'
       >;
 
       notifications: Table<
