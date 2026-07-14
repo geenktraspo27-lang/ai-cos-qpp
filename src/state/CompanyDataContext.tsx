@@ -578,7 +578,15 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   const approveDecision = useCallback((id: string) => decideDecision(id, 'approved'), [decideDecision]);
   const holdDecision = useCallback((id: string) => decideDecision(id, 'hold'), [decideDecision]);
 
-  /** 課題1: Mission Room's Goals can spawn a Workflow (no LLM stage generation yet — standard template). */
+  /**
+   * 課題5: Mission Room's Goals spawn a Workflow whose name and stages are
+   * designed by Nova via the server-side LLMService (/api/generate-workflow —
+   * the ANTHROPIC_API_KEY never reaches the client). Saving the Workflow
+   * itself still goes through the same Supabase insert 課題1 introduced; the
+   * LLM only supplies workflowName/stages, with 課題1's fixed 4-stage
+   * template as the fallback if the LLM call fails or returns something
+   * that doesn't validate.
+   */
   const createWorkflowFromGoal = useCallback(
     async (goalId: string) => {
       if (!companyId) return;
@@ -586,14 +594,44 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       if (!goal) return;
       if (workflows.some((w) => w.sourceGoalId === goalId)) return;
 
+      let workflowName = goal.name;
+      let stages: string[] = DEFAULT_WORKFLOW_STAGES;
+      let usedFallback = true;
+
+      try {
+        const res = await fetch('/api/generate-workflow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            goalName: goal.name,
+            missionText: `会社のVision: ${vision}\n実現したいGoal: ${goal.name}`,
+          }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { workflowName?: unknown; stages?: unknown; usedFallback?: unknown };
+          const validStages =
+            Array.isArray(data.stages) &&
+            data.stages.length >= 4 &&
+            data.stages.length <= 8 &&
+            data.stages.every((s) => typeof s === 'string' && s.trim() !== '');
+          if (typeof data.workflowName === 'string' && data.workflowName.trim() !== '' && validStages) {
+            workflowName = data.workflowName;
+            stages = data.stages as string[];
+            usedFallback = data.usedFallback === true;
+          }
+        }
+      } catch {
+        // Network/endpoint failure — keep the local fixed fallback below.
+      }
+
       const { data: workflow, error: workflowError } = await supabase
         .from('workflows')
         .insert({
           company_id: companyId,
-          name: goal.name,
+          name: workflowName,
           owner_employee_id: goal.ownerEmployeeId,
           pct: 0,
-          stages: DEFAULT_WORKFLOW_STAGES,
+          stages,
           current_stage: 0,
           source_goal_id: goalId,
         })
@@ -618,12 +656,11 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       ]);
       setActiveWorkflowsCount((count) => count + 1);
 
-      const owner = employeeById(goal.ownerEmployeeId);
-      const feedText = `${owner.name}が「${goal.name}」のWorkflowを作成しました`;
+      const feedText = usedFallback ? 'Novaは標準Workflowを生成しました' : 'NovaがWorkflowを設計しました';
 
       const { data: feedRow } = await supabase
         .from('activity_feed')
-        .insert({ company_id: companyId, employee_id: goal.ownerEmployeeId, text: feedText })
+        .insert({ company_id: companyId, employee_id: 'nova', text: feedText })
         .select('id, employee_id, text, created_at')
         .single();
       if (feedRow) {
@@ -658,7 +695,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         ]);
       }
     },
-    [companyId, goals, workflows],
+    [companyId, goals, workflows, vision],
   );
 
   /**
