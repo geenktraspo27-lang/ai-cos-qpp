@@ -91,9 +91,9 @@ export interface Database {
       ideas: Table<
         {
           id: string; company_id: string; title: string; employee_id: string; tag: string; heat: number;
-          content: string | null; source_document_id: string | null;
+          content: string | null; source_document_id: string | null; created_at: string;
         },
-        'id' | 'heat' | 'content' | 'source_document_id'
+        'id' | 'heat' | 'content' | 'source_document_id' | 'created_at'
       >;
 
       finance_summary: Table<{ company_id: string; budget_exec_pct: number; suggestion: string }, 'budget_exec_pct' | 'suggestion'>;
