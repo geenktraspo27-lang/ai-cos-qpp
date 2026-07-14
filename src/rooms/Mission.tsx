@@ -14,17 +14,31 @@ export function Mission() {
   const { showToast } = useApp();
   const { profile } = useAuth();
   const {
-    vision, visionProgressPct, goals, kpis,
+    vision, visionProgressPct, goals, kpis, workflows,
     updateVision, addGoal, updateGoal, removeGoal, addKpi, updateKpi, removeKpi,
+    createWorkflowFromGoal,
   } = useCompanyData();
 
   const [editVision, setEditVision] = useState(false);
   const [editGoals, setEditGoals] = useState(false);
   const [editKpis, setEditKpis] = useState(false);
+  const [creatingWorkflowFor, setCreatingWorkflowFor] = useState<string | null>(null);
 
   const toggleEdit = (on: boolean, setOn: (v: boolean) => void) => {
     setOn(!on);
     if (on) showToast('保存しました');
+  };
+
+  const handleCreateWorkflow = async (goalId: string) => {
+    setCreatingWorkflowFor(goalId);
+    try {
+      await createWorkflowFromGoal(goalId);
+      showToast('Workflowを作成しました');
+    } catch {
+      showToast('Workflowの作成に失敗しました');
+    } finally {
+      setCreatingWorkflowFor(null);
+    }
   };
 
   return (
@@ -96,6 +110,19 @@ export function Mission() {
                           担当: {owner.name}({owner.role})
                         </span>
                       </div>
+                      {workflows.some((w) => w.sourceGoalId === g.id) ? (
+                        <button className={styles.workflowDoneBtn} disabled>
+                          Workflow作成済み
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleCreateWorkflow(g.id)}
+                          disabled={creatingWorkflowFor === g.id}
+                          className={styles.workflowCreateBtn}
+                        >
+                          {creatingWorkflowFor === g.id ? '作成中…' : 'Workflowを作成'}
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className={styles.goalEditCard}>

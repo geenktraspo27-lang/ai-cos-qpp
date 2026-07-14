@@ -81,8 +81,11 @@ export interface Database {
       decision_contributors: Table<{ decision_id: string; employee_id: string }, never>;
 
       workflows: Table<
-        { id: string; company_id: string; name: string; owner_employee_id: string; pct: number; stages: string[]; current_stage: number },
-        'id' | 'pct' | 'stages' | 'current_stage'
+        {
+          id: string; company_id: string; name: string; owner_employee_id: string; pct: number;
+          stages: string[]; current_stage: number; source_goal_id: string | null;
+        },
+        'id' | 'pct' | 'stages' | 'current_stage' | 'source_goal_id'
       >;
 
       ideas: Table<

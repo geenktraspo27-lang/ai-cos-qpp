@@ -190,6 +190,43 @@
   color: var(--aicos-dim);
 }
 
+.workflowCreateBtn {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(46, 124, 214, 0.08);
+  border: 1px solid var(--aicos-holo);
+  color: var(--aicos-holo);
+  border-radius: 20px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--aicos-font-jp);
+}
+
+.workflowCreateBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.workflowDoneBtn {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--aicos-line);
+  color: var(--aicos-dim);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--aicos-font-jp);
+  cursor: default;
+}
+
 .goalEditCard {
   border: 1px solid var(--aicos-line);
   border-radius: var(--aicos-radius-card);

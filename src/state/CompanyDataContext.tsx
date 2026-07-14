@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { employeeById } from '../data/employees';
 import type { EmployeeId, RoomId } from '../types';
 
 export interface GoalRow {
@@ -82,7 +83,11 @@ export interface WorkflowRow {
   pct: number;
   stages: string[];
   currentStage: number;
+  sourceGoalId: string | null;
 }
+
+/** 課題1: standard stage template used when a workflow is created from a Goal (no LLM generation yet). */
+const DEFAULT_WORKFLOW_STAGES = ['計画', '実行', 'レビュー', '完了'];
 
 export interface IdeaRow {
   id: string;
@@ -180,6 +185,7 @@ interface CompanyData {
   removeTask: (employeeId: EmployeeId, id: string) => void;
   approveDecision: (id: string) => void;
   holdDecision: (id: string) => void;
+  createWorkflowFromGoal: (goalId: string) => Promise<void>;
 }
 
 const Ctx = createContext<CompanyData | null>(null);
@@ -259,7 +265,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
         supabase.from('decisions').select('id, title, rec, risk, by_employee_id, detail, status').eq('company_id', companyId!).order('created_at'),
         supabase.from('decision_messages').select('decision_id, employee_id, text, stance, position').order('position'),
         supabase.from('decision_contributors').select('decision_id, employee_id'),
-        supabase.from('workflows').select('id, name, owner_employee_id, pct, stages, current_stage').eq('company_id', companyId!),
+        supabase.from('workflows').select('id, name, owner_employee_id, pct, stages, current_stage, source_goal_id').eq('company_id', companyId!),
         supabase.from('ideas').select('id, title, employee_id, tag, heat').eq('company_id', companyId!),
         supabase.from('finance_summary').select('budget_exec_pct, suggestion').eq('company_id', companyId!).single(),
         supabase.from('finance_kpis').select('id, label, value, position').eq('company_id', companyId!).order('position'),
@@ -383,6 +389,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
           pct: w.pct,
           stages: w.stages,
           currentStage: w.current_stage,
+          sourceGoalId: w.source_goal_id,
         })),
       );
 
@@ -553,6 +560,89 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   const approveDecision = useCallback((id: string) => decideDecision(id, 'approved'), [decideDecision]);
   const holdDecision = useCallback((id: string) => decideDecision(id, 'hold'), [decideDecision]);
 
+  /** 課題1: Mission Room's Goals can spawn a Workflow (no LLM stage generation yet — standard template). */
+  const createWorkflowFromGoal = useCallback(
+    async (goalId: string) => {
+      if (!companyId) return;
+      const goal = goals.find((g) => g.id === goalId);
+      if (!goal) return;
+      if (workflows.some((w) => w.sourceGoalId === goalId)) return;
+
+      const { data: workflow, error: workflowError } = await supabase
+        .from('workflows')
+        .insert({
+          company_id: companyId,
+          name: goal.name,
+          owner_employee_id: goal.ownerEmployeeId,
+          pct: 0,
+          stages: DEFAULT_WORKFLOW_STAGES,
+          current_stage: 0,
+          source_goal_id: goalId,
+        })
+        .select('id, name, owner_employee_id, pct, stages, current_stage, source_goal_id')
+        .single();
+
+      if (workflowError || !workflow) {
+        throw workflowError ?? new Error('Failed to create workflow');
+      }
+
+      setWorkflows((prev) => [
+        ...prev,
+        {
+          id: workflow.id,
+          name: workflow.name,
+          ownerEmployeeId: workflow.owner_employee_id as EmployeeId,
+          pct: workflow.pct,
+          stages: workflow.stages,
+          currentStage: workflow.current_stage,
+          sourceGoalId: workflow.source_goal_id,
+        },
+      ]);
+      setActiveWorkflowsCount((count) => count + 1);
+
+      const owner = employeeById(goal.ownerEmployeeId);
+      const feedText = `${owner.name}が「${goal.name}」のWorkflowを作成しました`;
+
+      const { data: feedRow } = await supabase
+        .from('activity_feed')
+        .insert({ company_id: companyId, employee_id: goal.ownerEmployeeId, text: feedText })
+        .select('id, employee_id, text, created_at')
+        .single();
+      if (feedRow) {
+        setFeed((prev) => [
+          { id: feedRow.id, employeeId: feedRow.employee_id as EmployeeId, text: feedRow.text, createdAt: feedRow.created_at },
+          ...prev,
+        ]);
+      }
+
+      const { data: notifRow } = await supabase
+        .from('notifications')
+        .insert({
+          company_id: companyId,
+          employee_id: goal.ownerEmployeeId,
+          text: '新しいWorkflowが作成されました',
+          room: 'workflow',
+          unread: true,
+        })
+        .select('id, employee_id, text, room, unread, created_at')
+        .single();
+      if (notifRow) {
+        setNotifications((prev) => [
+          {
+            id: notifRow.id,
+            employeeId: notifRow.employee_id as EmployeeId,
+            text: notifRow.text,
+            room: notifRow.room as RoomId,
+            unread: notifRow.unread,
+            createdAt: notifRow.created_at,
+          },
+          ...prev,
+        ]);
+      }
+    },
+    [companyId, goals, workflows],
+  );
+
   const value = useMemo<CompanyData>(
     () => ({
       loading,
@@ -593,6 +683,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       removeTask,
       approveDecision,
       holdDecision,
+      createWorkflowFromGoal,
     }),
     [
       loading, error, vision, visionProgressPct, goals, kpis, notifications, feed,
@@ -601,7 +692,7 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       financeCosts, contracts, brandKpis, campaigns, marketInsights, docCoveragePct, documents,
       refetch, updateVision, addGoal, updateGoal,
       removeGoal, addKpi, updateKpi, removeKpi, addTask, updateTask, removeTask,
-      approveDecision, holdDecision,
+      approveDecision, holdDecision, createWorkflowFromGoal,
     ],
   );
 
