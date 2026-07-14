@@ -103,15 +103,6 @@ export interface WorkflowStageResultRow {
 /** 課題1: standard stage template used when a workflow is created from a Goal (no LLM generation yet). */
 const DEFAULT_WORKFLOW_STAGES = ['計画', '実行', 'レビュー', '完了'];
 
-/** 課題2: recommended progress % for the standard 4-stage template (計画/実行/レビュー/完了). */
-const STANDARD_STAGE_PERCENTS = [0, 25, 75, 100];
-
-function stagePercentFor(stageIndex: number, totalStages: number): number {
-  if (totalStages === STANDARD_STAGE_PERCENTS.length) return STANDARD_STAGE_PERCENTS[stageIndex];
-  if (totalStages <= 1) return 100;
-  return Math.round((stageIndex / (totalStages - 1)) * 100);
-}
-
 export interface IdeaRow {
   id: string;
   title: string;
@@ -762,25 +753,19 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
   );
 
   /**
-   * 課題2/3/7: advance a workflow by exactly one stage — now the "承認して
-   * 次へ進む" action. This is the ONLY path that moves a Workflow's stage,
-   * so gating it on an approval here is what keeps "AI generated a result"
-   * and "the company officially progressed" distinct: it first tries to
-   * flip that stage's workflow_stage_results row from 'generated' to
-   * 'approved' (guarded so a race or a stage with no generated result yet
-   * is a safe no-op), and only proceeds to the existing stage-advance logic
-   * if that approval actually happened.
+   * 課題2/3/7/7.5: approve the current stage's AI-generated result and
+   * advance the Workflow by exactly one stage in a single call — this is
+   * the "承認して次へ進む" action, and the ONLY path that moves a
+   * Workflow's stage. Approval, the stage advance, the Goal pct sync, the
+   * Activity entry, and (on the final stage) the Completion Report + Brain
+   * Knowledge creation all happen inside one Postgres transaction via
+   * approve_and_advance_workflow_stage — a partial failure anywhere in that
+   * chain rolls every part of it back, so a stage can never end up
+   * 'approved' with the Workflow not having advanced (or vice versa).
    *
-   * The `.eq('current_stage', ...)` guard below makes the workflow update a
-   * no-op (0 rows) if the stage already moved since we read it — belt-and-
-   * braces against double-clicks/races on top of the UI-level disabled
-   * state, so a workflow can never skip a stage.
-   *
-   * The final advance (reaching the last stage) is instead delegated to the
-   * complete_workflow RPC, which applies the completion side-effects and
-   * generates the Documentation completion report atomically in one
-   * transaction — doing that as separate client-side calls could leave a
-   * completed Workflow without its report (or vice versa) if one call failed.
+   * Passing the stage index we last saw (`wf.currentStage`) lets the RPC
+   * detect a stale screen or a retried request: if the Workflow already
+   * moved past it, the call is a safe no-op instead of double-advancing.
    */
   const advanceWorkflowStage = useCallback(
     async (workflowId: string) => {
@@ -790,76 +775,12 @@ export function CompanyDataProvider({ children }: { children: ReactNode }) {
       const lastIndex = wf.stages.length - 1;
       if (wf.currentStage >= lastIndex) return;
 
-      const { data: approvedRow, error: approveError } = await supabase
-        .from('workflow_stage_results')
-        .update({ status: 'approved', approved_at: new Date().toISOString() })
-        .eq('workflow_id', workflowId)
-        .eq('stage_index', wf.currentStage)
-        .eq('status', 'generated')
-        .select('id')
-        .single();
-      if (approveError || !approvedRow) {
-        // No generated result to approve for this stage (or it was already
-        // approved/rejected) — nothing to advance.
-        return;
-      }
-      setWorkflowStageResults((prev) =>
-        prev.map((r) =>
-          r.id === approvedRow.id ? { ...r, status: 'approved', approvedAt: new Date().toISOString() } : r,
-        ),
-      );
-
-      const nextStage = wf.currentStage + 1;
-      const isComplete = nextStage === lastIndex;
-
-      if (isComplete) {
-        const { error } = await supabase.rpc('complete_workflow', { p_workflow_id: workflowId });
-        if (error) throw error;
-        refetch();
-        return;
-      }
-
-      const nextPct = stagePercentFor(nextStage, wf.stages.length);
-
-      const { data: updated, error: updateError } = await supabase
-        .from('workflows')
-        .update({ current_stage: nextStage, pct: nextPct })
-        .eq('id', workflowId)
-        .eq('current_stage', wf.currentStage)
-        .select('id, current_stage, pct')
-        .single();
-
-      if (updateError || !updated) {
-        // Either a real error, or another click already advanced this
-        // workflow first (0 rows matched) — either way, nothing to apply.
-        return;
-      }
-
-      setWorkflows((prev) =>
-        prev.map((w) => (w.id === workflowId ? { ...w, currentStage: updated.current_stage, pct: updated.pct } : w)),
-      );
-
-      if (wf.sourceGoalId) {
-        const goalId = wf.sourceGoalId;
-        setGoals((prev) => prev.map((g) => (g.id === goalId ? { ...g, pct: nextPct } : g)));
-        void supabase.from('goals').update({ pct: nextPct }).eq('id', goalId);
-      }
-
-      const owner = employeeById(wf.ownerEmployeeId);
-      const stageLabel = wf.stages[nextStage];
-      const feedText = `${owner.name}が「${wf.name}」を${stageLabel}に進めました`;
-
-      const { data: feedRow } = await supabase
-        .from('activity_feed')
-        .insert({ company_id: companyId, employee_id: wf.ownerEmployeeId, text: feedText })
-        .select('id, employee_id, text, created_at')
-        .single();
-      if (feedRow) {
-        setFeed((prev) => [
-          { id: feedRow.id, employeeId: feedRow.employee_id as EmployeeId, text: feedRow.text, createdAt: feedRow.created_at },
-          ...prev,
-        ]);
-      }
+      const { error } = await supabase.rpc('approve_and_advance_workflow_stage', {
+        p_workflow_id: workflowId,
+        p_expected_stage_index: wf.currentStage,
+      });
+      if (error) throw error;
+      refetch();
     },
     [companyId, workflows, refetch],
   );

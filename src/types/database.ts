@@ -168,6 +168,13 @@ export interface Database {
         Args: { p_workflow_id: string };
         Returns: { workflow_id: string; current_stage: number; pct: number; document_id: string };
       };
+      approve_and_advance_workflow_stage: {
+        Args: { p_workflow_id: string; p_expected_stage_index: number };
+        Returns: {
+          workflow_id: string; current_stage: number; pct: number;
+          already_processed: boolean; document_id?: string;
+        };
+      };
     };
   };
 }
