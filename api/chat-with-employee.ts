@@ -41,6 +41,8 @@ function sendError(res: ServerResponse, status: number) {
  * information or employee identity.
  */
 export default async function handler(req: ApiRequest, res: ServerResponse) {
+  console.info('[chat-with-employee] started');
+
   if (req.method !== 'POST') {
     sendJson(res, 405, { error: 'method not allowed' });
     return;
@@ -57,15 +59,18 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
   const accessToken = extractBearerToken(req.headers.authorization);
   const supabase = createUserScopedSupabaseClient(accessToken);
   if (!supabase) {
+    console.error('[chat-with-employee] missing or invalid bearer token');
     sendError(res, 401);
     return;
   }
 
   const employee = await lookupCompanyEmployee(accessToken, employeeId);
   if (!employee) {
+    console.error('[chat-with-employee] employee lookup failed');
     sendError(res, 404);
     return;
   }
+  console.info('[chat-with-employee] employee verified');
 
   try {
     const [visionRes, goalsRes, workflowsRes, ideasRes, historyRes] = await Promise.all([
@@ -106,8 +111,16 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
       .reverse()
       .map((r) => ({ role: r.role as 'user' | 'assistant', content: r.content as string }));
 
+    console.info('[chat-with-employee] context loaded', {
+      goals: goals.length,
+      workflows: inProgressWorkflows.length,
+      knowledge: knowledge.length,
+      historyMessages: conversationHistory.length,
+    });
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
+      console.error('[chat-with-employee] ANTHROPIC_API_KEY is not configured');
       sendError(res, 500);
       return;
     }
@@ -118,11 +131,16 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
       .from('employee_chat_messages')
       .insert({ employee_id: employeeId, role: 'user', content: message });
     if (userInsertError) {
+      console.error('[chat-with-employee] user message insert failed', {
+        code: userInsertError.code,
+        message: userInsertError.message,
+      });
       sendError(res, 500);
       return;
     }
 
     const llm = new AnthropicLLMService(apiKey);
+    console.info('[chat-with-employee] calling Anthropic');
     const { reply } = await llm.chatWithEmployee({
       employee: { name: employee.name, roleJp: employee.roleJp, persona: employee.persona },
       companyVision,
@@ -132,6 +150,7 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
       conversationHistory,
       message,
     });
+    console.info('[chat-with-employee] Anthropic response received');
 
     const { data: savedAssistant, error: assistantInsertError } = await supabase
       .from('employee_chat_messages')
@@ -139,15 +158,29 @@ export default async function handler(req: ApiRequest, res: ServerResponse) {
       .select('created_at')
       .single();
     if (assistantInsertError || !savedAssistant) {
+      console.error('[chat-with-employee] assistant message insert failed', {
+        code: assistantInsertError?.code,
+        message: assistantInsertError?.message,
+      });
       sendError(res, 500);
       return;
     }
+    console.info('[chat-with-employee] assistant message saved');
 
     sendJson(res, 200, {
       reply,
       createdAt: savedAssistant.created_at as string,
     } satisfies ChatWithEmployeeResponseBody);
-  } catch {
+  } catch (error) {
+    console.error('[chat-with-employee] request failed', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message : String(error),
+      status:
+        typeof error === 'object' && error !== null && 'status' in error
+          ? String((error as { status: unknown }).status)
+          : undefined,
+    });
+
     sendError(res, 500);
   }
 }
