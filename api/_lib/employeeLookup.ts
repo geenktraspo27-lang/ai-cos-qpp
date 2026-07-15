@@ -1,4 +1,4 @@
-import { createUserScopedSupabaseClient } from './supabaseServer.ts';
+import { createUserScopedSupabaseClient } from './supabaseServer';
 
 export interface CanonicalEmployee {
   id: string;

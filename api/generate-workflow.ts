@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { AnthropicLLMService } from './_lib/llmService.ts';
-import { lookupCompanyEmployee } from './_lib/employeeLookup.ts';
+import { AnthropicLLMService } from './_lib/llmService';
+import { lookupCompanyEmployee } from './_lib/employeeLookup';
 
 /** 課題1's original fixed stage set — the fallback whenever the LLM path can't run. */
 const FALLBACK_STAGES = ['計画', '実行', 'レビュー', '完了'];

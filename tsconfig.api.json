@@ -6,8 +6,8 @@
     "types": ["node"],
     "skipLibCheck": true,
 
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "moduleDetection": "force",
