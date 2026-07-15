@@ -1,4 +1,4 @@
-import { createUserScopedSupabaseClient } from './supabaseServer';
+import { createUserScopedSupabaseClient } from './supabaseServer.js';
 
 export interface CanonicalEmployee {
   id: string;

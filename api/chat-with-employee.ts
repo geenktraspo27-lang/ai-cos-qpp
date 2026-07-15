@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { AnthropicLLMService } from './_lib/llmService';
-import { lookupCompanyEmployee } from './_lib/employeeLookup';
-import { createUserScopedSupabaseClient, extractBearerToken } from './_lib/supabaseServer';
+import { AnthropicLLMService } from './_lib/llmService.js';
+import { lookupCompanyEmployee } from './_lib/employeeLookup.js';
+import { createUserScopedSupabaseClient, extractBearerToken } from './_lib/supabaseServer.js';
 
 interface ApiRequest extends IncomingMessage {
   body?: unknown;
